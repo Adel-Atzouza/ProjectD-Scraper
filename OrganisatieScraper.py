@@ -3,7 +3,7 @@ from scrapy.crawler import CrawlerProcess
 
 class OrganisatiesSpider(scrapy.Spider):
     name = 'organisaties'
-    start_urls = ['https://www.goudawijzer.nl/is/organisaties?q=&size=100']
+    start_urls = ['https://www.goudawijzer.nl/is/organisaties?q=&size=1000']
 
     def parse(self, response):
         organisaties = response.css('.searchResults__contentContainer')
