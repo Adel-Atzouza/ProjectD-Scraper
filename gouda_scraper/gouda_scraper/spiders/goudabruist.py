@@ -9,13 +9,22 @@ class GoudaBruistSpider(scrapy.Spider):
     increment = 40
     start_time = None
 
+    custom_settings = {
+        'FEEDS': {
+            'events.csv': {
+                'format': 'csv',
+                'overwrite': True,
+            }
+        },
+        'FEED_EXPORT_ENCODING': 'utf-8',
+    }
+
     def parse(self, response):
         if self.start_time is None:
             self.start_time = time.time()
 
         yield from self.parse_activities(response)
 
-        # Als er nog activiteiten zijn, doorgaan met pagineren
         if response.css('div.card-body'):
             self.from_param += self.increment
             yield scrapy.Request(
@@ -38,7 +47,7 @@ class GoudaBruistSpider(scrapy.Spider):
             )
         else:
             total_time = time.time() - self.start_time
-            print(f"Scraping voltooid. Totale tijd: {total_time:.2f} seconden")
+            print(f"✅ Scraping voltooid. Totale tijd: {total_time:.2f} seconden")
 
     def parse_activities(self, response):
         activities = response.css('div.card-body')
@@ -51,6 +60,9 @@ class GoudaBruistSpider(scrapy.Spider):
             title = activity.css('div.go_card-title-wrapper::text').get()
             source = activity.css('div.go_source-name-wrapper::text').get()
             description = activity.css('div.go_content-start-wrapper::text').get()
+
+            href = activity.xpath('ancestor::a[1]/@href').get()
+            detail_url = response.urljoin(href) if href else None
 
             if title:
                 title = title.strip()
@@ -65,5 +77,6 @@ class GoudaBruistSpider(scrapy.Spider):
                 'Time': time_event,
                 'Title': title,
                 'Source': source,
-                'Description': description
+                'Description': description,
+                'URL': detail_url
             }
