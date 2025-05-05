@@ -6,7 +6,7 @@ import re
 
 
 class ContactenSpider(scrapy.Spider):
-    name = "contacten_spider"
+    name = "sportpuntondersteuning_contacten_spider"
     start_urls = [
         "https://www.sportpuntgouda.nl/beweegmakelaars",
         "https://www.sportpuntgouda.nl/volwassenenfonds-sport-en-cultuur",

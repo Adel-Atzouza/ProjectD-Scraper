@@ -3,7 +3,7 @@ from scrapy.crawler import CrawlerProcess
 from scrapy_playwright.page import PageMethod
 
 class SportcentrumMammoetSpider(scrapy.Spider):
-    name = "mammoet_zalen"
+    name = "sportcentrummammoet_zalen"
     start_urls = ["https://www.sportpuntgouda.nl/sportcentrum-de-mammoet"]
 
     custom_settings = {
