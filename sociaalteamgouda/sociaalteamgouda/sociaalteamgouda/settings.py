@@ -12,7 +12,11 @@ BOT_NAME = "sociaalteamgouda"
 SPIDER_MODULES = ["sociaalteamgouda.spiders"]
 NEWSPIDER_MODULE = "sociaalteamgouda.spiders"
 
+LOG_LEVEL = 'WARNING'
 
+EXTENSIONS = {
+    "scrapy.extensions.telnet.TelnetConsole": None,'scrapy.extensions.logstats.LogStats': None,
+}
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = "sociaalteamgouda (+http://www.yourdomain.com)"
 

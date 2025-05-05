@@ -21,6 +21,8 @@ class SportpuntGoudaSpider(scrapy.Spider):
             rows = response.xpath('//tr[@class="d-none d-md-table-row"]')
             for row in rows:
                 # Get time (in the first <td>)
+                if row == rows[1000]:
+                    break
                 time_text = row.xpath('.//td[@class="text-nowrap"]/text()[1]').get()
                 if time_text:
                     time_text = time_text.strip()

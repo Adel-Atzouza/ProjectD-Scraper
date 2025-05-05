@@ -4,7 +4,9 @@ import sys
 import os
 
 SPIDERS = [
-    ("zoekenboekAgenda", "kwadraad_agenda")
+    ("zoekenboekAgenda", "kwadraad_agenda"),
+    ("goudawijzer", "organisaties"),
+    ("goudawijzer", "goudabruist"),
     ("sportpunt", "sportpuntondersteuning_contacten_spider"),
     ("sportpunt", "sportaanbieders"),
     ("sportpunt", "zebra_zalen"),
@@ -13,15 +15,12 @@ SPIDERS = [
     ("sportpunt", "groenhovenbad"),
     ("sportpunt", "dickvandijkhal_zalen"),
     ("sportpunt", "verhuur_buitensport"),
-    ("goudabruist", "organisaties"),
     ("sportpunt", "sportgouda_nieuws"),
     ("sportpunt", "sportpuntgouda_rooster"),
     ("sociaalteamgouda", "activities"),
     ("sociaalteamgouda", "algemene_info"),
     ("sociaalteamgouda", "contact_spider"),
     ("sociaalteamgouda", "sociaalteamgouda_spider"),
-    ("goudabruist", "goudabruist"),
-    ("sportpunt", "sportpuntgouda"),
 
 
 

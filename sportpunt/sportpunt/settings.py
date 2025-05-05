@@ -12,7 +12,7 @@ BOT_NAME = "sportpunt"
 SPIDER_MODULES = ["sportpunt.spiders"]
 NEWSPIDER_MODULE = "sportpunt.spiders"
 
-
+LOG_LEVEL = 'WARNING'
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = "sportpunt (+http://www.yourdomain.com)"
 
@@ -56,9 +56,9 @@ ROBOTSTXT_OBEY = True
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
-#EXTENSIONS = {
-#    "scrapy.extensions.telnet.TelnetConsole": None,
-#}
+EXTENSIONS = {
+    "scrapy.extensions.telnet.TelnetConsole": None,'scrapy.extensions.logstats.LogStats': None,
+}
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
