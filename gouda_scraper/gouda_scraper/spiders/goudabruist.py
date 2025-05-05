@@ -1,6 +1,7 @@
 import scrapy
 import time
 
+
 class GoudaBruistSpider(scrapy.Spider):
     name = 'goudabruist'
     start_urls = ['https://goudabruist.nl/activiteiten']
