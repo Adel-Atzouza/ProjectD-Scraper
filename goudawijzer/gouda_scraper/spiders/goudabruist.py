@@ -11,7 +11,7 @@ class GoudaBruistSpider(scrapy.Spider):
 
     custom_settings = {
         'FEEDS': {
-            'events.csv': {
+            'result/events.csv': {
                 'format': 'csv',
                 'overwrite': True,
             }
