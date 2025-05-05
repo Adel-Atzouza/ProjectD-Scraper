@@ -14,14 +14,13 @@ class ContactenSpider(scrapy.Spider):
         "https://www.sportpuntgouda.nl/gouda-goed-bezig-jogg",
         "https://www.sportpuntgouda.nl/inclusie",
         "https://www.sportpuntgouda.nl/sociaal-domein",
-        "https://www.sportpuntgouda.nl/tipkaart-zorgverleners"
-
-
+        "https://www.sportpuntgouda.nl/tipkaart-zorgverleners",
+        "https://www.sportpuntgouda.nl/kenniscentrum"
     ]
 
     custom_settings = {
         "FEEDS": {
-            "contacten.csv": {
+            "SportpunbGoudacontacten.csv": {
                 "format": "csv",
                 "fields": ["categorie", "naam", "functie", "telefoon", "email", "pagina_url"],
                 "encoding": "utf8"
@@ -119,6 +118,27 @@ class ContactenSpider(scrapy.Spider):
                 "pagina_url": url
             }
 
+        elif "kenniscentrum" in response.url:
+            self.logger.info("📘 Kenniscentrum contactpersoon gevonden")
+
+            titel = response.css("h5.card-title::text").get(default="").strip()
+            if "|" in titel:
+                naam, functie = [x.strip() for x in titel.split("|", 1)]
+            else:
+                naam, functie = titel, ""
+
+            telefoon = response.css("a[href^='tel:']::attr(href)").get(default="").replace("tel:", "").strip()
+
+            yield {
+                "categorie": "kenniscentrum",
+                "naam": naam,
+                "functie": functie,
+                "telefoon": telefoon,
+                "email": "",  # niet aanwezig op deze pagina
+                "pagina_url": response.url
+            }
+
+
                 # Inclusie
         elif "inclusie" in url:
             naam = "Kim"
@@ -175,13 +195,35 @@ class ContactenSpider(scrapy.Spider):
             email = response.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
 
             yield {
-                "categorie": "tipkaart zorgverleners",
+                "categorie": "sport-zorgverleners",
                 "naam": naam,
                 "functie": functie,
                 "telefoon": "",  # geen telefoon zichtbaar
                 "email": email,
                 "pagina_url": response.url
             }
+
+        elif "gouds-leefstijlakkoord" in response.url:
+            self.logger.info("💙 Gouds Leefstijlakkoord contactpersoon gevonden")
+
+            titel = response.css("h5.card-title::text").get(default="").strip()
+            if "|" in titel:
+                naam, functie = [x.strip() for x in titel.split("|", 1)]
+            else:
+                naam, functie = titel, ""
+
+            telefoon = response.css("a[href^='tel:']::attr(href)").get(default="").replace("tel:", "").strip()
+            email = response.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
+
+            yield {
+                "categorie": "gouds leefstijlakkoord",
+                "naam": naam,
+                "functie": functie,
+                "telefoon": telefoon,
+                "email": email,
+                "pagina_url": response.url
+            }
+
 
 
 
