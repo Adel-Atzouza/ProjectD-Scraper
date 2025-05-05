@@ -17,7 +17,7 @@ def get_event_links():
 
     wait = WebDriverWait(driver, 10)
     links = set()
-    max_weeks = 5  # adjust depending on how far back/future you want to go
+    max_weeks = 2  # adjust depending on how far back/future you want to go
 
     for _ in range(max_weeks):
         time.sleep(2)
