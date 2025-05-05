@@ -90,3 +90,14 @@ ROBOTSTXT_OBEY = True
 # Set settings whose default value is deprecated to a future-proof value
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
+
+FEEDS = {
+    'ik_zoek_hulp.csv': {
+        'format': 'csv',
+        'overwrite': True,
+    },
+    'contact.csv': {
+        'format': 'csv',
+        'overwrite': True,
+    }
+}
