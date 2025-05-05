@@ -7,6 +7,15 @@ class SociaalTeamSpider(scrapy.Spider):
     allowed_domains = ['sociaalteamgouda.nl']
     start_urls = ['https://sociaalteamgouda.nl/ik-zoek-hulp/']
 
+    custom_settings = {
+        'FEEDS': {
+            'ik_zoek_hulp.csv': {
+                'format': 'csv',
+                'overwrite': True
+            }
+        }
+    }
+
     def parse(self, response):
         # Haal alle links naar de themapagina’s
         thema_links = response.css("div.entry-content a::attr(href)").getall()
