@@ -1,7 +1,6 @@
 import scrapy
 import re
 
-
 class SociaalTeamSpider(scrapy.Spider):
     name = 'sociaalteamgouda_spider'
     allowed_domains = ['sociaalteamgouda.nl']

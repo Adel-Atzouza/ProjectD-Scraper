@@ -18,7 +18,7 @@ class ActivitiesSpider(scrapy.Spider):
         self.output_file = (result_dir / "activities.csv").open("w", newline="", encoding="utf-8")
         self.csv_writer = csv.writer(self.output_file)
         self.csv_writer.writerow([
-            "title", "description", "date", "time", "location",
+            "title", "date", "time", "location", "description",
             "contact_name", "contact_email", "contact_phone", "url"
         ])
 
@@ -26,55 +26,60 @@ class ActivitiesSpider(scrapy.Spider):
         self.output_file.close()
 
     def parse(self, response):
-        links = response.css('a.b-card::attr(href)').getall()
-        for link in links:
-            yield response.follow(link, callback=self.parse_activity)
+        cards = response.css("a.b-card")
+        for card in cards:
+            url = card.css("::attr(href)").get()
+            title = card.css("h3.b-card__title::text").get(default="").strip()
+            date = card.css("span.start-date::text").get(default="").strip()
+            time = card.css("span.start-date-time::text").get(default="").strip()
+            time = " ".join(time.split())
+            location = card.css("span.text::text").get(default="").strip()
 
-    def parse_activity(self, response):
-        title = response.css('h1.entry-title::text').get(default="").strip()
+            # Pass extracted data to the detail page
+            yield response.follow(url, callback=self.parse_detail, meta={
+                "title": title,
+                "date": date,
+                "time": time,
+                "location": location,
+                "url": response.urljoin(url)
+            })
 
-        # Clean and join only the paragraphs in the main content area
-        description_parts = response.css('div.entry-content > p::text').getall()
-        description = " ".join(p.strip() for p in description_parts if p.strip())
-        description = description.replace("We konden geen gerelateerde activiteitsgebeurtenissen vinden.", "").strip()
+    def parse_detail(self, response):
+        title = response.meta["title"]
+        date = response.meta["date"]
+        time = response.meta["time"]
+        location = response.meta["location"]
+        url = response.meta["url"]
 
-        url = response.url
+        # Clean and focused description
+        content_blocks = response.css("div.entry-content > *")
+        paragraphs = []
+        for block in content_blocks:
+            # Ignore forms, scripts, and interactive divs
+            if block.root.tag in ["script", "form"]:
+                continue
+            text = block.xpath("string(.)").get(default="").strip()
+            if text and "E-mailadres (Vereist)" not in text and "document.getElementById" not in text:
+                paragraphs.append(text)
 
-        # Extract optional details
-        date = ""
-        time = ""
-        location = ""
-
-        # Try to extract dates and times from description (primitive heuristic)
-        import re
-        date_match = re.search(r"\b\d{1,2} (januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december) \d{4}\b", description)
-        if date_match:
-            date = date_match.group(0)
-
-        time_match = re.search(r"\b\d{1,2}[:.]\d{2}\s?(uur)?\b", description)
-        if time_match:
-            time = time_match.group(0)
-
-        location_match = re.search(r"(?:in|bij|op)\s+(?:de\s)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),?", description)
-        if location_match:
-            location = location_match.group(1)
-
-        contact_name = response.css('.b-person__name::text').get(default="").strip()
+        description = " ".join(paragraphs).strip()
+        
+        # Contact details
+        contact_name = response.css(".b-person__name::text").get(default="").strip()
         contact_email = response.css('a[href^="mailto:"]::text').get(default="").strip()
         contact_phone = response.css('a[href^="tel:"]::text').get(default="").strip()
 
-        # Write to CSV
         self.csv_writer.writerow([
-            title, description, date, time, location,
+            title, date, time, location, description,
             contact_name, contact_email, contact_phone, url
         ])
 
         yield ActivityItem(
             title=title,
-            description=description,
             date=date,
             time=time,
             location=location,
+            description=description,
             contact_name=contact_name,
             contact_email=contact_email,
             contact_phone=contact_phone,
