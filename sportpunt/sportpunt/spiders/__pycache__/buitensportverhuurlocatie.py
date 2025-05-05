@@ -49,7 +49,7 @@ class VerhuurSpider(scrapy.Spider):
         adresregel = footer_block.xpath(".//p/br/following-sibling::text()[1]").get(default="").strip()
         algemene_tel = footer_block.xpath(".//a[starts-with(@href, 'tel:')]/text()").get(default="").strip()
         algemene_email = footer_block.xpath(".//a[starts-with(@href, 'mailto:')]/text()").get(default="").strip()
-        self.logger.info(f"🔍 Miranda-tekst: {contact_tekst}")
+        self.logger.info(f" Miranda-tekst: {contact_tekst}")
 
         algemene_contact = f"{algemene_naam}, {adresregel}, {algemene_tel}, {algemene_email}"
 
