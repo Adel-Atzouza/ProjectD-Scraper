@@ -54,127 +54,123 @@ class ContactenSpider(scrapy.Spider):
             yield scrapy.Request(
                 url=url,
                 meta={"playwright": True, "playwright_page_methods": [PageMethod("wait_for_timeout", 1000)]},
-                callback=self.parse
+                callback=self.parse,
+                errback=self.errback_log
             )
+
+    def errback_log(self, failure):
+        self.logger.error(f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
 
     def parse(self, response):
         url = response.url
 
-        if "beweegmakelaars" in url:
-            for card in response.css(".card-stretch-hover"):
-                naam = card.css("h5.card-title::text").get(default="").strip()
-                tekst = " ".join(card.xpath(".//p//text()").getall()).strip()
-                telefoon = ""
-                email = card.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
-                matches = re.findall(r"(06\d{8})", tekst.replace(" ", "").replace("-", ""))
-                if matches:
-                    telefoon = matches[0]
-                if naam and telefoon:
-                    yield {
-                        "categorie": "beweegmakelaars",
-                        "naam": naam,
-                        "functie": "",
-                        "telefoon": telefoon,
-                        "email": email,
-                        "pagina_url": url,
-                        "beschrijving": self.get_beschrijving("beweegmakelaars")
-                    }
+        try:
+            if "beweegmakelaars" in url:
+                for card in response.css(".card-stretch-hover"):
+                    naam = card.css("h5.card-title::text").get(default="").strip()
+                    tekst = " ".join(card.xpath(".//p//text()").getall()).strip()
+                    email = card.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
+                    matches = re.findall(r"(06\d{8})", tekst.replace(" ", "").replace("-", ""))
+                    telefoon = matches[0] if matches else ""
 
-        elif "volwassenenfonds" in url:
-            for li in response.css("ul > li"):
-                tekst = " ".join(li.css("*::text").getall()).strip()
-                naam = li.xpath(".//text()[1]").get(default="").strip()
-                functie_match = re.search(r"(Beweegmakelaar.*?|Kennismetwerk.*?)\,", tekst)
-                tel_match = re.search(r"(06[\s\d]{8,})", tekst)
-                email = li.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
+                    if naam and telefoon:
+                        yield {
+                            "categorie": "beweegmakelaars",
+                            "naam": naam,
+                            "functie": "",
+                            "telefoon": telefoon,
+                            "email": email,
+                            "pagina_url": url,
+                            "beschrijving": self.get_beschrijving("beweegmakelaars")
+                        }
 
-                if naam and tel_match:
-                    yield {
-                        "categorie": "volwassenenfonds",
-                        "naam": naam,
-                        "functie": functie_match.group(1) if functie_match else "",
-                        "telefoon": tel_match.group(1).replace(" ", ""),
-                        "email": email,
-                        "pagina_url": url,
-                        "beschrijving": self.get_beschrijving("volwassenenfonds")
-                    }
+            elif "volwassenenfonds" in url:
+                for li in response.css("ul > li"):
+                    tekst = " ".join(li.css("*::text").getall()).strip()
+                    naam = li.xpath(".//text()[1]").get(default="").strip()
+                    functie_match = re.search(r"(Beweegmakelaar.*?|Kennismetwerk.*?)\,", tekst)
+                    tel_match = re.search(r"(06[\s\d]{8,})", tekst)
+                    email = li.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
 
-        elif "valpreventie" in url:
-            naam = "Sabine"
-            functie = "Valpreventie"
-            telefoon = response.css('a[href^="tel:"]::text').get(default="").replace(" ", "")
-            email = response.css('a[href^="mailto:"]::attr(href)').get(default="").replace("mailto:", "").strip()
-            yield {
-                "categorie": "valpreventie",
-                "naam": naam,
-                "functie": functie,
-                "telefoon": telefoon,
-                "email": email,
-                "pagina_url": url,
-                "beschrijving": self.get_beschrijving("valpreventie")
-            }
+                    if naam and tel_match:
+                        yield {
+                            "categorie": "volwassenenfonds",
+                            "naam": naam,
+                            "functie": functie_match.group(1) if functie_match else "",
+                            "telefoon": tel_match.group(1).replace(" ", ""),
+                            "email": email,
+                            "pagina_url": url,
+                            "beschrijving": self.get_beschrijving("volwassenenfonds")
+                        }
 
-        elif "gouda-goed-bezig-jogg" in url:
-            naam = response.css("h6.card-title::text").get(default="").strip().split("|")[0].strip()
-            functie = "Gouda Goed Bezig Regisseur"
-            email = response.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
-            yield {
-                "categorie": "gezond eten",
-                "naam": naam,
-                "functie": functie,
-                "telefoon": "",
-                "email": email,
-                "pagina_url": url,
-                "beschrijving": self.get_beschrijving("gezond eten")
-            }
+            elif "valpreventie" in url:
+                naam = "Sabine"
+                functie = "Valpreventie"
+                telefoon = response.css('a[href^="tel:"]::text').get(default="").replace(" ", "")
+                email = response.css('a[href^="mailto:"]::attr(href)').get(default="").replace("mailto:", "").strip()
+                yield {
+                    "categorie": "valpreventie",
+                    "naam": naam,
+                    "functie": functie,
+                    "telefoon": telefoon,
+                    "email": email,
+                    "pagina_url": url,
+                    "beschrijving": self.get_beschrijving("valpreventie")
+                }
 
-        elif "kenniscentrum" in url:
-            titel = response.css("h5.card-title::text").get(default="").strip()
-            if "|" in titel:
-                naam, functie = [x.strip() for x in titel.split("|", 1)]
-            else:
-                naam, functie = titel, ""
-            telefoon = response.css("a[href^='tel:']::attr(href)").get(default="").replace("tel:", "").strip()
-            yield {
-                "categorie": "kenniscentrum",
-                "naam": naam,
-                "functie": functie,
-                "telefoon": telefoon,
-                "email": "",
-                "pagina_url": url,
-                "beschrijving": self.get_beschrijving("kenniscentrum")
-            }
+            elif "gouda-goed-bezig-jogg" in url:
+                naam_raw = response.css("h6.card-title::text").get()
+                naam = naam_raw.split("|")[0].strip() if naam_raw else ""
+                email = response.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
+                yield {
+                    "categorie": "gezond eten",
+                    "naam": naam,
+                    "functie": "Gouda Goed Bezig Regisseur",
+                    "telefoon": "",
+                    "email": email,
+                    "pagina_url": url,
+                    "beschrijving": self.get_beschrijving("gezond eten")
+                }
 
-        elif "inclusie" in url:
-            naam = "Kim"
-            functie = "Coördinator Aangepast Sporten"
-            email = response.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
-            yield {
-                "categorie": "inclusie",
-                "naam": naam,
-                "functie": functie,
-                "telefoon": "",
-                "email": email,
-                "pagina_url": url,
-                "beschrijving": self.get_beschrijving("inclusie")
-            }
+            elif "kenniscentrum" in url:
+                titel = response.css("h5.card-title::text").get(default="").strip()
+                naam, functie = (titel.split("|") + [""])[:2]
+                yield {
+                    "categorie": "kenniscentrum",
+                    "naam": naam.strip(),
+                    "functie": functie.strip(),
+                    "telefoon": response.css("a[href^='tel:']::attr(href)").get(default="").replace("tel:", "").strip(),
+                    "email": "",
+                    "pagina_url": url,
+                    "beschrijving": self.get_beschrijving("kenniscentrum")
+                }
 
-        elif "rotterdampas" in url:
-            yield {
-                "categorie": "rotterdampas",
-                "naam": "",
-                "functie": "",
-                "telefoon": "",
-                "email": "",
-                "pagina_url": url,
-                "beschrijving": self.get_beschrijving("rotterdampas")
-            }
+            elif "inclusie" in url:
+                yield {
+                    "categorie": "inclusie",
+                    "naam": "Kim",
+                    "functie": "Coördinator Aangepast Sporten",
+                    "telefoon": "",
+                    "email": response.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip(),
+                    "pagina_url": url,
+                    "beschrijving": self.get_beschrijving("inclusie")
+                }
 
-        elif "sociaal-domein" in url:
-            for persoon in response.css("div.card-stretch-hover"):
-                naam_functie = persoon.css("h6::text").get(default="").strip()
-                email = persoon.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
-                if naam_functie and email:
+            elif "rotterdampas" in url:
+                yield {
+                    "categorie": "rotterdampas",
+                    "naam": "",
+                    "functie": "",
+                    "telefoon": "",
+                    "email": "",
+                    "pagina_url": url,
+                    "beschrijving": self.get_beschrijving("rotterdampas")
+                }
+
+            elif "sociaal-domein" in url:
+                for persoon in response.css("div.card-stretch-hover"):
+                    naam_functie = persoon.css("h6::text").get(default="").strip()
+                    email = persoon.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
                     parts = naam_functie.split("|")
                     naam = parts[0].strip()
                     functie = parts[1].strip() if len(parts) > 1 else ""
@@ -188,40 +184,34 @@ class ContactenSpider(scrapy.Spider):
                         "beschrijving": self.get_beschrijving("sociaal domein")
                     }
 
-        elif "tipkaart-zorgverleners" in url:
-            titel = response.css("h5.card-title::text").get(default="").strip()
-            if "|" in titel:
-                naam, functie = [x.strip() for x in titel.split("|", 1)]
-            else:
-                naam, functie = titel, ""
-            email = response.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
-            yield {
-                "categorie": "sport-zorgverleners",
-                "naam": naam,
-                "functie": functie,
-                "telefoon": "",
-                "email": email,
-                "pagina_url": url,
-                "beschrijving": self.get_beschrijving("sport-zorgverleners")
-            }
+            elif "tipkaart-zorgverleners" in url:
+                titel = response.css("h5.card-title::text").get(default="").strip()
+                naam, functie = (titel.split("|") + [""])[:2]
+                yield {
+                    "categorie": "sport-zorgverleners",
+                    "naam": naam.strip(),
+                    "functie": functie.strip(),
+                    "telefoon": "",
+                    "email": response.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip(),
+                    "pagina_url": url,
+                    "beschrijving": self.get_beschrijving("sport-zorgverleners")
+                }
 
-        elif "gouds-leefstijlakkoord" in url:
-            titel = response.css("h5.card-title::text").get(default="").strip()
-            if "|" in titel:
-                naam, functie = [x.strip() for x in titel.split("|", 1)]
-            else:
-                naam, functie = titel, ""
-            telefoon = response.css("a[href^='tel:']::attr(href)").get(default="").replace("tel:", "").strip()
-            email = response.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
-            yield {
-                "categorie": "gouds leefstijlakkoord",
-                "naam": naam,
-                "functie": functie,
-                "telefoon": telefoon,
-                "email": email,
-                "pagina_url": url,
-                "beschrijving": self.get_beschrijving("gouds leefstijlakkoord")
-            }
+            elif "gouds-leefstijlakkoord" in url:
+                titel = response.css("h5.card-title::text").get(default="").strip()
+                naam, functie = (titel.split("|") + [""])[:2]
+                yield {
+                    "categorie": "gouds leefstijlakkoord",
+                    "naam": naam.strip(),
+                    "functie": functie.strip(),
+                    "telefoon": response.css("a[href^='tel:']::attr(href)").get(default="").replace("tel:", "").strip(),
+                    "email": response.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip(),
+                    "pagina_url": url,
+                    "beschrijving": self.get_beschrijving("gouds leefstijlakkoord")
+                }
+
+        except Exception as e:
+            self.logger.error(f"❌ Fout bij het verwerken van {url}: {e}")
 
 
 

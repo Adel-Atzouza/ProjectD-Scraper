@@ -2,7 +2,9 @@ import subprocess
 import time
 import sys
 import os
+from datetime import datetime
 
+# 🕷️ Lijst van alle spiders en bijbehorende projectmappen
 SPIDERS = [
     ("GoudaScraper", "kwadraad_agenda"),
     ("GoudaScraper", "organisaties"),
