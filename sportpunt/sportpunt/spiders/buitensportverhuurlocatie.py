@@ -25,41 +25,63 @@ class VerhuurSpider(scrapy.Spider):
 
     def start_requests(self):
         yield scrapy.Request(
-            url="https://www.sportpuntgouda.nl/verhuur_2",
-            meta={
-                "playwright": True,
-                "playwright_page_methods": [
-                    PageMethod("click", "a[href='/sportparken']"),
-                    PageMethod("wait_for_timeout", 1000)
-                ]
-            },
-            callback=self.parse_sportparken
+            url=self.start_urls[0],
+            meta={"playwright": True},
+            callback=self.parse_main,
+            errback=self.errback_log
         )
 
-    def parse_sportparken(self, response):
+    def parse_main(self, response):
+        # Zoek link naar "Buitensport"
+        buitensport_url = response.css("a:contains('Buitensport')::attr(href)").get()
+        if buitensport_url:
+            yield response.follow(
+                url=buitensport_url,
+                meta={"playwright": True, "playwright_page_methods": [PageMethod("wait_for_timeout", 1000)]},
+                callback=self.parse_buitensport,
+                errback=self.errback_log
+            )
+        else:
+            self.logger.warning("⚠️ Geen link naar Buitensport gevonden op verhuur_2")
+
+    def parse_buitensport(self, response):
+        # Lees algemene SPORT•GOUDA-footergegevens
+        footer = response.xpath("//div[contains(@class, 'col-md-4') and contains(., 'SPORT•GOUDA')]")
+        algemene_email = footer.xpath(".//a[starts-with(@href, 'mailto:')]/text()").get(default="").strip()
+
+        # Klik door naar elk sportpark (linkkaarten)
+        for link in response.css(".card a::attr(href)").getall():
+            yield response.follow(
+                url=link,
+                meta={
+                    "playwright": True,
+                    "playwright_page_methods": [PageMethod("wait_for_timeout", 1000)],
+                    "algemene_email": algemene_email
+                },
+                callback=self.parse_sportpark,
+                errback=self.errback_log
+            )
+
+    def parse_sportpark(self, response):
         pagina_url = response.url
-        contact_tekst = response.css('a[href^="tel:"]::text').get()
+        naam = response.css("h1::text").get(default="").strip()
+        tel = response.css("a[href^='tel:']::text").get(default="").strip()
+        algemene_email = response.meta.get("algemene_email", "")
 
-        footer_block = response.xpath("//div[contains(@class, 'col-md-4') and contains(., 'SPORT•GOUDA')]")
-        algemene_naam = footer_block.xpath(".//strong/text()").get(default="").strip()
-        adresregel = footer_block.xpath(".//p/br/following-sibling::text()[1]").get(default="").strip()
-        algemene_tel = footer_block.xpath(".//a[starts-with(@href, 'tel:')]/text()").get(default="").strip()
-        algemene_email = footer_block.xpath(".//a[starts-with(@href, 'mailto:')]/text()").get(default="").strip()
-
-        algemene_contact = f"{algemene_naam}, {adresregel}, {algemene_tel}, {algemene_email}"
-
-        for card in response.css(".card-stretch-hover"):
-            naam = card.css("h5::text").get(default="").strip()
-            if not naam:
-                continue
-
+        if not naam:
+            self.logger.warning(f"⚠️ Geen naam gevonden op {pagina_url}")
+        else:
             yield {
                 "categorie": "Buitensport",
                 "sportpark": naam,
                 "pagina_url": pagina_url,
-                "contact_tel": contact_tekst,
-                "algemene_contact_email": algemene_contact
+                "contact_tel": tel,
+                "algemene_contact_email": algemene_email
             }
+
+    def errback_log(self, failure):
+        self.logger.error(f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
+
 
 
 # import scrapy

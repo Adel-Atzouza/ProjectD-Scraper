@@ -26,23 +26,37 @@ class SportcentrumMammoetSpider(scrapy.Spider):
         for url in self.start_urls:
             yield scrapy.Request(
                 url=url,
-                meta={"playwright": True},
-                callback=self.parse_zalen
+                meta={
+                    "playwright": True,
+                    "playwright_page_methods": [PageMethod("wait_for_timeout", 1000)]
+                },
+                callback=self.parse_zalen,
+                errback=self.errback_log
             )
 
     def parse_zalen(self, response):
         pagina_url = response.url
         locatie = "Sportcentrum de Mammoet"
 
-        for zaal in response.css(".card-title.text-theme-3::text"):
-            zaal_naam = zaal.get().strip()
-            if zaal_naam:
-                yield {
-                    "categorie": "Binnensport",
-                    "locatie": locatie,
-                    "pagina_url": pagina_url,
-                    "zaal_naam": zaal_naam
-                }
+        try:
+            zalen = response.css(".card-title.text-theme-3::text")
+            if not zalen:
+                self.logger.warning(f"⚠️ Geen zalen gevonden op {pagina_url}")
+
+            for zaal in zalen:
+                zaal_naam = zaal.get().strip()
+                if zaal_naam:
+                    yield {
+                        "categorie": "Binnensport",
+                        "locatie": locatie,
+                        "pagina_url": pagina_url,
+                        "zaal_naam": zaal_naam
+                    }
+        except Exception as e:
+            self.logger.error(f"❌ Fout bij verwerken van {pagina_url}: {e}")
+
+    def errback_log(self, failure):
+        self.logger.error(f"❌ Pagina mislukt: {failure.request.url} - {repr(failure)}")
 
 
 # import scrapy

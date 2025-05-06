@@ -28,58 +28,79 @@ class GroenhovenbadSpider(scrapy.Spider):
     def start_requests(self):
         yield scrapy.Request(
             url=self.start_urls[0],
-            meta={"playwright": True},
-            callback=self.parse_groenhovenbad
+            meta={
+                "playwright": True,
+                "playwright_page_methods": [PageMethod("wait_for_timeout", 1000)]
+            },
+            callback=self.parse_groenhovenbad,
+            errback=self.errback_log
         )
 
     def parse_groenhovenbad(self, response):
         pagina_url = response.url
         locatie = "Groenhovenbad"
 
-        # Deel 1: baden bovenaan
-        for naam in response.css("h5.card-title.text-theme-1::text"):
-            yield {
-                "categorie": "Binnensport",
-                "locatie": locatie,
-                "pagina_url": pagina_url,
-                "item_naam": naam.get().strip(),
-                "afmeting": "",
-                "bijzonderheden": "",
-                "tarief": ""
-            }
-
-        # Deel 2: verhuur-tarieven onderaan
-        rows = response.css("table.table-striped tr")
-        current_name = ""
-        for row in rows:
-            name_el = row.css("h5::text").get()
-            if name_el:
-                current_name = name_el.strip()
-                continue
-
-            texts = row.css("td::text").getall()
-            texts = [t.strip() for t in texts if t.strip()]
-            if len(texts) == 2:
-                afm_bijz = texts[0]
-                prijs = texts[1]
-
-                afmeting = ""
-                bijzonderheden = ""
-                if "Afmeting:" in afm_bijz:
-                    delen = afm_bijz.split("Bijzonderheden:")
-                    afmeting = delen[0].replace("Afmeting:", "").strip()
-                    if len(delen) > 1:
-                        bijzonderheden = delen[1].strip()
+        try:
+            # Deel 1: baden bovenaan
+            for naam in response.css("h5.card-title.text-theme-1::text"):
+                bad_naam = naam.get().strip()
+                if not bad_naam:
+                    self.logger.warning(f"⚠️ Lege badnaam gevonden op {pagina_url}")
+                    continue
 
                 yield {
                     "categorie": "Binnensport",
                     "locatie": locatie,
                     "pagina_url": pagina_url,
-                    "item_naam": current_name,
-                    "afmeting": afmeting,
-                    "bijzonderheden": bijzonderheden,
-                    "tarief": prijs
+                    "item_naam": bad_naam,
+                    "afmeting": "",
+                    "bijzonderheden": "",
+                    "tarief": ""
                 }
+
+            # Deel 2: verhuur-tarieven onderaan
+            rows = response.css("table.table-striped tr")
+            current_name = ""
+            for row in rows:
+                name_el = row.css("h5::text").get()
+                if name_el:
+                    current_name = name_el.strip()
+                    continue
+
+                texts = row.css("td::text").getall()
+                texts = [t.strip() for t in texts if t.strip()]
+                if len(texts) == 2:
+                    afm_bijz = texts[0]
+                    prijs = texts[1]
+
+                    afmeting = ""
+                    bijzonderheden = ""
+                    if "Afmeting:" in afm_bijz:
+                        delen = afm_bijz.split("Bijzonderheden:")
+                        afmeting = delen[0].replace("Afmeting:", "").strip()
+                        if len(delen) > 1:
+                            bijzonderheden = delen[1].strip()
+
+                    if not current_name:
+                        self.logger.warning(f"⚠️ Rij met afmetingen/tarief maar zonder item_naam op {pagina_url}")
+                        continue
+
+                    yield {
+                        "categorie": "Binnensport",
+                        "locatie": locatie,
+                        "pagina_url": pagina_url,
+                        "item_naam": current_name,
+                        "afmeting": afmeting,
+                        "bijzonderheden": bijzonderheden,
+                        "tarief": prijs
+                    }
+
+        except Exception as e:
+            self.logger.error(f"❌ Fout bij het verwerken van {pagina_url}: {e}")
+
+    def errback_log(self, failure):
+        self.logger.error(f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
+
 
 
 # import scrapy
