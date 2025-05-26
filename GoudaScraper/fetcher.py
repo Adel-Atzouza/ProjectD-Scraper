@@ -18,7 +18,7 @@ def get_event_links():
     driver = webdriver.Chrome(options=chrome_options)
     driver.get("https://zoekenboekgouda.kwadraad.nl/agenda")
 
-    wait = WebDriverWait(driver, 10)
+    wait = WebDriverWait(driver, 6)
     links = set()
     week_count = 0
 
