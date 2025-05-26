@@ -1,50 +1,49 @@
 import os
+import requests
+import subprocess
 from bs4 import BeautifulSoup
-from playwright.sync_api import sync_playwright
 
-def get_dynamic_content(url: str) -> str:
-    """Laad een pagina volledig (inclusief JavaScript) en geef de HTML terug."""
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.goto(url)
-        page.wait_for_timeout(3000)  # wacht op JavaScript-rendering
-        html = page.content()
-        browser.close()
-        return html
 
-def genereer_samenvatting(html: str, uitvoerpad: str = "samenvatting.txt") -> None:
-    """Haal tekst uit HTML en laat deze samenvatten door een lokaal AI-model."""
-    soup = BeautifulSoup(html, "html.parser")
-    tekst = soup.get_text(separator="\n", strip=True)
+def get_page(url: str) -> None:
+    root = requests.get(url).content
+    soup = BeautifulSoup(root, "html.parser")
 
-    if not tekst.strip():
-        print("⚠️ Geen bruikbare tekst gevonden op de pagina.")
-        return
+    for x in soup.find_all("a", href=True):
+        depth_1 = requests.get("https://goudawijzer.nl" + x["href"]).content
+        depth_1 = BeautifulSoup(depth_1, "html.parser")
 
-    prompt = (
-    "Lees onderstaande tekst en geef een duidelijke en volledige samenvatting in bullet points. "
-    "Richt je op de volgende onderdelen:\n"
-    "- De namen van alle sportparken\n"
-    "- Per sportpark: het adres en de aanwezige sportvoorzieningen (zoals voetbalvelden, handbalvelden, etc.)\n"
-    "- Geef ook de contactgegevens van de organisatie (zoals naam contactpersoon, telefoonnummer en e-mailadres)\n"
-    "Voeg geen onnodige informatie toe buiten deze onderdelen. Gebruik alleen de tekst die hieronder volgt:\n\n"
+        print(depth_1.get_text())
+
+
+def voorbeeld():
+    print(
+        "https://www.goudawijzer.nl/is/een-vraag-over/wonen-en-huishouden/woningen-en-woonvormen/seniorenwoningen"
     )
+    root = requests.get(
+        "https://www.goudawijzer.nl/is/een-vraag-over/wonen-en-huishouden/woningen-en-woonvormen/seniorenwoningen"
+    ).content
 
-    volledige_prompt = prompt + tekst
+    print("Page Downloaded")
+    print("---------------", end="\n\n")
 
-    # Sla het prompt tijdelijk op in een bestand
-    with open("temp_input.txt", "w", encoding="utf-8") as f:
-        f.write(volledige_prompt)
+    root = BeautifulSoup(root, "html.parser")
 
-    # Roep Ollama aan en schrijf naar uitvoerbestand
-    os.system(f"ollama run llama3.2:1b < temp_input.txt > {uitvoerpad}")
-    os.remove("temp_input.txt")
-    print(f"✅ Samenvatting opgeslagen in: {uitvoerpad}")
+    root = root.get_text()
+
+    # prompt = "Vat deze tekst samen en voeg geen extra tekst toe in de output van dit prompt verzoek. geef alleen de samenvatting terug. \t"
+    prompt = "Geef een uitgebreide samenvatting in bullet points van deze tekst. \t"
+    args = [
+        "ollama",
+        "run",
+        "llama3.2:1b",
+        f'"{prompt + root}"',
+        ">",
+        "samenvatting.txt",
+    ]
+    os.system(" ".join(args))
+    print("Samenvatting opgeslagen.")
+
 
 if __name__ == "__main__":
-    url = "https://www.sportpuntgouda.nl/sportparken"
-    print(f"🌐 Pagina laden: {url}")
-    html = get_dynamic_content(url)
-    print("📄 Pagina gedownload. Samenvatting wordt gegenereerd...")
-    genereer_samenvatting(html)
+    # content = get_page("https://www.goudawijzer.nl/is/een-vraag-over")
+    voorbeeld()
