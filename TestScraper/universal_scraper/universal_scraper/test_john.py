@@ -44,3 +44,38 @@ async def test_parse_handles_no_cookie_popup(spider):
 
     result = [r async for r in spider.parse(response)]
     assert isinstance(result, list)
+
+
+@pytest.mark.asyncio
+async def test_parse_with_network_error(monkeypatch, spider):
+    async def raise_error(*args, **kwargs):
+        raise Exception("Network failed")
+
+    page_mock = AsyncMock()
+    page_mock.locator.side_effect = raise_error
+    page_mock.evaluate.side_effect = raise_error
+    page_mock.content.return_value = "<body><p>Fallback</p></body>"
+
+    response = make_response("http://example.com", "<body></body>", spider)
+    response.meta["playwright"] = True
+    response.meta["playwright_page"] = page_mock
+
+    try:
+        result = [r async for r in spider.parse(response)]
+        assert True  # Geen crash
+    except Exception:
+        assert False, "Spider should handle network errors gracefully"
+
+
+def test_js_fallback_triggered(spider):
+    html = "<html><script>console.log('JS')</script></html>"
+    response = make_response("http://example.com", html, spider)
+    gen = spider.precheck(response)
+    next_req = next(gen)
+    assert next_req.meta['playwright'] is True
+
+
+def test_internal_link_check(spider):
+    spider.allowed_domains = ["example.com"]
+    assert spider.is_internal("http://example.com/test") is True
+    assert spider.is_internal("http://external.com") is False
