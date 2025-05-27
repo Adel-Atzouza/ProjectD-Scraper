@@ -1,19 +1,30 @@
 import os
 import requests
-import subprocess
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from bs4 import BeautifulSoup
 
+import ai
+
+def fetch_and_parse(url: str) -> str:
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "html.parser")
+        return soup.get_text()
+    except Exception as e:
+        return f"Error fetching {url}: {e}"
 
 def get_page(url: str) -> None:
     root = requests.get(url).content
     soup = BeautifulSoup(root, "html.parser")
 
-    for x in soup.find_all("a", href=True):
-        depth_1 = requests.get("https://goudawijzer.nl" + x["href"]).content
-        depth_1 = BeautifulSoup(depth_1, "html.parser")
+    links = ["https://goudawijzer.nl" + x["href"] for x in soup.find_all("a", href=True)]
 
-        print(depth_1.get_text())
-
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_url = {executor.submit(fetch_and_parse, link): link for link in links}
+        for future in as_completed(future_to_url):
+            text = future.result()
+            print(text)
 
 def voorbeeld():
     print(
@@ -30,20 +41,6 @@ def voorbeeld():
 
     root = root.get_text()
 
-    # prompt = "Vat deze tekst samen en voeg geen extra tekst toe in de output van dit prompt verzoek. geef alleen de samenvatting terug. \t"
-    prompt = "Geef een uitgebreide samenvatting in bullet points van deze tekst. \t"
-    args = [
-        "ollama",
-        "run",
-        "llama3.2:1b",
-        f'"{prompt + root}"',
-        ">",
-        "samenvatting.txt",
-    ]
-    os.system(" ".join(args))
-    print("Samenvatting opgeslagen.")
-
-
 if __name__ == "__main__":
-    # content = get_page("https://www.goudawijzer.nl/is/een-vraag-over")
+    # get_page("https://www.goudawijzer.nl/is/een-vraag-over")
     voorbeeld()
