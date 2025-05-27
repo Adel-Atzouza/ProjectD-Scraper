@@ -1,7 +1,0 @@
-('Error fetching '
- 'https://goudawijzer.nlhttps://www.zorgpartners.nl/wonen/huurwoningen?hlc=15167: '
- "HTTPSConnectionPool(host='goudawijzer.nlhttps', port=443): Max retries "
- 'exceeded with url: /www.zorgpartners.nl/wonen/huurwoningen?hlc=15167 (Caused '
- 'by NameResolutionError("<urllib3.connection.HTTPSConnection object at '
- "0x7fcc8695f4d0>: Failed to resolve 'goudawijzer.nlhttps' ([Errno -2] Name or "
- 'service not known)"))')
