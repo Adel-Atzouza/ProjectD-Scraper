@@ -1,1 +1,8 @@
-Error fetching https://goudawijzer.nlhttps://www.funda.nl/zoeken/huur?selected_area=%5B%22nl%22%5D&accessibility=%5B%22lift%22,%22ground_floor%22,%22adapted_home%22,%22single_storey%22,%22accessible_for_the_elderly%22,%22accessible_for_the_disabled%22%5D: HTTPSConnectionPool(host='goudawijzer.nlhttps', port=443): Max retries exceeded with url: /www.funda.nl/zoeken/huur?selected_area=%5B%22nl%22%5D&accessibility=%5B%22lift%22,%22ground_floor%22,%22adapted_home%22,%22single_storey%22,%22accessible_for_the_elderly%22,%22accessible_for_the_disabled%22%5D (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7fc18136fed0>: Failed to resolve 'goudawijzer.nlhttps' ([Errno -2] Name or service not known)"))
+('Error fetching '
+ 'https://goudawijzer.nlhttps://www.funda.nl/zoeken/huur?selected_area=%5B%22nl%22%5D&accessibility=%5B%22lift%22,%22ground_floor%22,%22adapted_home%22,%22single_storey%22,%22accessible_for_the_elderly%22,%22accessible_for_the_disabled%22%5D: '
+ "HTTPSConnectionPool(host='goudawijzer.nlhttps', port=443): Max retries "
+ 'exceeded with url: '
+ '/www.funda.nl/zoeken/huur?selected_area=%5B%22nl%22%5D&accessibility=%5B%22lift%22,%22ground_floor%22,%22adapted_home%22,%22single_storey%22,%22accessible_for_the_elderly%22,%22accessible_for_the_disabled%22%5D '
+ '(Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object '
+ "at 0x7fcc8678ce10>: Failed to resolve 'goudawijzer.nlhttps' ([Errno -2] Name "
+ 'or service not known)"))')

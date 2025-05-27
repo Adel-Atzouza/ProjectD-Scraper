@@ -2,6 +2,7 @@ import os
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from bs4 import BeautifulSoup
+import pprint
 
 import ai
 
@@ -30,22 +31,11 @@ def get_page(url: str) -> None:
             results.append((filename, text))
         for filename, text in results:
             with open("files/" + filename, "w", encoding="utf-8") as f:
-                f.write(text)
+                f.write(pprint.pformat(text))
     print("All pages downloaded and saved.")
 
-def voorbeeld():
-
-    root = get_page(
-        "https://www.goudawijzer.nl/is/een-vraag-over/wonen-en-huishouden/woningen-en-woonvormen/seniorenwoningen"
-    )
-
-    print("Page Downloaded")
-    print("---------------", end="\n\n")
-
-    # root = BeautifulSoup(root, "html.parser")
-
-    root = root.get_text()
 
 if __name__ == "__main__":
-    # get_page("https://www.goudawijzer.nl/is/een-vraag-over")
-    voorbeeld()
+    root = get_page(
+        "https://www.goudawijzer.nl/is/een-vraag-over/wonen-en-huishouden/"
+    )
