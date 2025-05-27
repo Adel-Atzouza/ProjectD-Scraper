@@ -1,0 +1,1 @@
+Error fetching https://goudawijzer.nlhttp://www.zorgpartners.nl: HTTPSConnectionPool(host='goudawijzer.nlhttp', port=443): Max retries exceeded with url: /www.zorgpartners.nl (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7fc18136fc50>: Failed to resolve 'goudawijzer.nlhttp' ([Errno -2] Name or service not known)"))

@@ -22,22 +22,27 @@ def get_page(url: str) -> None:
 
     with ThreadPoolExecutor(max_workers=10) as executor:
         future_to_url = {executor.submit(fetch_and_parse, link): link for link in links}
+        results = []
         for future in as_completed(future_to_url):
             text = future.result()
-            print(text)
+            url = future_to_url[future]
+            filename = url.split("/")[-1] + ".txt"
+            results.append((filename, text))
+        for filename, text in results:
+            with open("files/" + filename, "w", encoding="utf-8") as f:
+                f.write(text)
+    print("All pages downloaded and saved.")
 
 def voorbeeld():
-    print(
+
+    root = get_page(
         "https://www.goudawijzer.nl/is/een-vraag-over/wonen-en-huishouden/woningen-en-woonvormen/seniorenwoningen"
     )
-    root = requests.get(
-        "https://www.goudawijzer.nl/is/een-vraag-over/wonen-en-huishouden/woningen-en-woonvormen/seniorenwoningen"
-    ).content
 
     print("Page Downloaded")
     print("---------------", end="\n\n")
 
-    root = BeautifulSoup(root, "html.parser")
+    # root = BeautifulSoup(root, "html.parser")
 
     root = root.get_text()
 
