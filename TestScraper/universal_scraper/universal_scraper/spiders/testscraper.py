@@ -21,12 +21,14 @@ COOKIE_KEYWORDS = [
     'button:has-text("Toestaan")',
 ]
 
+
 class UniversalSpider(scrapy.Spider):
     name = "testscraper"
     allowed_domains = []
     collected_data = []  # In geheugen opslaan voor CSV-output achteraf
     visited_hashes = set()  # Om dubbele pagina's te skippen (hash op inhoud)
-
+    hash_url_map = {}  # Store content_hash -> URL
+    idd = 0
     custom_settings = {
         'DOWNLOAD_HANDLERS': {
             'http': 'scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler',
@@ -151,7 +153,7 @@ class UniversalSpider(scrapy.Spider):
             return
 
         self.visited_hashes.add(content_hash)
-
+        self.hash_url_map[content_hash] = response.url
         #fallback_text = await page.evaluate("document.body.innerText") 
         #Dit hierboven is mogelijk een extra optie om alle tekst dat zichtbaar is te pakken.
 
@@ -170,6 +172,18 @@ class UniversalSpider(scrapy.Spider):
                 "raw_text": raw_text
             })
 
+        with open("urls_visited.csv", "a", newline='', encoding='utf-8') as f:
+            self.idd += 1
+            writer = csv.DictWriter(f, fieldnames=['id', 'url'])
+            
+            if f.tell() == 0:
+                writer.writeheader()
+
+            writer.writerow({
+                "id": self.idd,
+                "url": response.url
+            })
+
         # Volg alle interne links (zelfde domein)
         for href in response.xpath("//a/@href").getall():
             absolute_url = response.urljoin(href)
@@ -186,11 +200,16 @@ class UniversalSpider(scrapy.Spider):
         return any(domain.endswith(allowed) for allowed in self.allowed_domains)
 
     def closed(self, reason):
-        # Bij afsluiten: alles dumpen naar CSV (evt. later uitbreiden met JSON/PDF)
         output_file = 'output.csv'
         with open(output_file, mode='w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=['url', 'raw_text'])
             writer.writeheader()
             for row in self.collected_data:
                 writer.writerow(row)
+
+        # Print hash-to-URL mapping on exit
+        print("\nVisited pages (content hash → URL):")
+        for h, url in self.hash_url_map.items():
+            print(f"{h} -> {url}")
+
         self.logger.info(f"Saved scraped data to {output_file}")
