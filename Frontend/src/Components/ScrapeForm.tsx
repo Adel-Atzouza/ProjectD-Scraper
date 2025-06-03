@@ -9,10 +9,19 @@ const ScrapeForm: React.FC<ScrapeFormProps> = ({ onScrape }) => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (url.trim()) {
-            onScrape(url.trim());
-            setUrl("");
+
+        const trimmedUrl = url.trim();
+
+        // Regex voor basis website-validatie (.com, .org, .nl, etc.)
+        const urlPattern = /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}$/i;
+
+        if (!urlPattern.test(trimmedUrl)) {
+            alert("Voer een geldige website-URL in (zoals https://voorbeeld.com)");
+            return;
         }
+
+        onScrape(trimmedUrl.startsWith("http") ? trimmedUrl : `https://${trimmedUrl}`);
+        setUrl("");
     };
 
     return (

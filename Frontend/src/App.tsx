@@ -19,8 +19,18 @@ const App: React.FC = () => {
   };
 
   const toggleSelect = (url: string) => {
-    setSelected((prev) => (prev[0] === url ? [] : [url]));
+    setSelected((prev) =>
+      prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
+    );
   };
+
+
+
+  const handleDelete = (url: string) => {
+    setWebsites((prev) => prev.filter((site) => site !== url));
+    setSelected((prev) => prev.filter((site) => site !== url)); // deselect if deleted
+  };
+
 
   return (
     <div className="container">
@@ -30,7 +40,9 @@ const App: React.FC = () => {
         websites={websites}
         selected={selected}
         toggleSelect={toggleSelect}
+        onDelete={handleDelete}
       />
+
       <ExportMenu selectedWebsites={selected} />
     </div>
   );
