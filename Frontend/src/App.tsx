@@ -19,14 +19,12 @@ const App: React.FC = () => {
   };
 
   const toggleSelect = (url: string) => {
-    setSelected((prev) =>
-      prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
-    );
+    setSelected((prev) => (prev[0] === url ? [] : [url]));
   };
 
   return (
     <div className="container">
-      <h1>Webscraper Interface</h1>
+      <h1>Sociaal Domein Scraper</h1>
       <ScrapeForm onScrape={handleScrape} />
       <WebsiteList
         websites={websites}
