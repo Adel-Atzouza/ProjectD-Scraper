@@ -1,47 +1,81 @@
-from requests_html import HTMLSession
-from bs4 import BeautifulSoup
+import asyncio, os
 from urllib.parse import urljoin, urlparse
-from collections import deque
+from bs4 import BeautifulSoup
+from playwright.async_api import async_playwright
+
+MAX_CONCURRENT_TASKS = 5
+
+visited = set()
+semaphore = asyncio.Semaphore(MAX_CONCURRENT_TASKS)
 
 def is_valid_subpath_link(base_url, target_url):
     base_parts = urlparse(base_url)
     target_parts = urlparse(target_url)
-    
     return (
         base_parts.netloc == target_parts.netloc and
         target_parts.path.startswith(base_parts.path)
     )
 
-def scrape_links(base_url):
-    session = HTMLSession()
-    visited = set()
-    to_visit = deque([base_url])
-
-    while to_visit:
-        url = to_visit.popleft()
+async def scrape_page(context, url, base_url, to_visit):
+    async with semaphore:
         if url in visited:
-            continue
-
+            return
         print(f"Scraping: {url}")
         try:
-            response = session.get(url)
-            response.html.render(timeout=20)
+            page = await context.new_page()
+            await page.goto(url, timeout=30000)
+            content = await page.content()
+            await page.close()
         except Exception as e:
-            print(f"Failed to render {url}: {e}")
-            continue
+            print(f"Failed to load {url}: {e}")
+            return
 
         visited.add(url)
-        soup = BeautifulSoup(response.html.html, 'html.parser')
+        soup = BeautifulSoup(content, 'html.parser')
 
-        for link_tag in soup.find_all('a', href=True):
-            full_url = urljoin(url, link_tag['href'])
-            if is_valid_subpath_link(base_url, full_url) and full_url not in visited:
-                to_visit.append(full_url)
+        # Scrape the page content
+        if not os.path.exists('files'):
+            os.makedirs('files')
+        
+        filename = urlparse(url).path.replace('/', '_') + '.txt'
+        with open(f'files/{filename}', 'w', encoding='utf-8') as f:
+            f.write(soup.get_text(separator='\n', strip=True))
+    
+        # Find all links on the page
 
-    print("\nAll visited pages:")
+        for link in soup.find_all('a', href=True):
+            href = urljoin(url, link['href'])
+            if is_valid_subpath_link(base_url, href) and href not in visited:
+                to_visit.put_nowait(href)
+
+async def main(base_url):
+    to_visit = asyncio.Queue()
+    await to_visit.put(base_url)
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        context = await browser.new_context()
+
+        tasks = []
+        while not to_visit.empty() or tasks:
+            while not to_visit.empty():
+                next_url = await to_visit.get()
+                task = asyncio.create_task(scrape_page(context, next_url, base_url, to_visit))
+                tasks.append(task)
+
+            # wait for some tasks to complete
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            tasks = list(pending)
+
+        await browser.close()
+
+    print("\n✅ All visited pages:")
     for link in visited:
         print(link)
 
 if __name__ == "__main__":
-    start_url = "https://example.com/start/"  # Replace with your actual starting path
-    scrape_links(start_url)
+    start_url = "https://www.goudawijzer.nl/is/een-vraag-over"
+    asyncio.run(main(start_url))
+
+
+
