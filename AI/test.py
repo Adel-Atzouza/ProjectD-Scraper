@@ -38,8 +38,11 @@ async def scrape_page(context, url, base_url, to_visit):
             os.makedirs('files')
         
         filename = urlparse(url).path.replace('/', '_') + '.txt'
+        
+        paragraphs = soup.find_all('p')
+        text = '\n'.join(p.get_text(separator=' ', strip=True) for p in paragraphs)
         with open(f'files/{filename}', 'w', encoding='utf-8') as f:
-            f.write(soup.get_text(separator='\n', strip=True))
+            f.write(text)
     
         # Find all links on the page
 
