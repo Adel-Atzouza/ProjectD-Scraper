@@ -40,7 +40,19 @@ async def scrape_page(context, url, base_url, to_visit):
         filename = urlparse(url).path.replace('/', '_') + '.txt'
         
         paragraphs = soup.find_all('p')
-        text = '\n'.join(p.get_text(separator=' ', strip=True) for p in paragraphs)
+        lines = []
+        for p in paragraphs:
+            line = ""
+            for elem in p.descendants:
+                if elem.name == 'a' and elem.has_attr('href'):
+                    href = urljoin(url, elem['href'])
+                    link_text = elem.get_text(separator=' ', strip=True)
+                    line += f"{link_text} ({href})"
+                elif elem.name is None:
+                    line += elem.strip()
+            if line.strip():
+                lines.append(line.strip())
+        text = '\n'.join(lines)
         with open(f'files/{filename}', 'w', encoding='utf-8') as f:
             f.write(text)
     
