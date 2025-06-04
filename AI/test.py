@@ -45,6 +45,7 @@ async def scrape_page(context, url, base_url, to_visit):
 
         for link in soup.find_all('a', href=True):
             href = urljoin(url, link['href'])
+            href = href.split('#')[0]
             if is_valid_subpath_link(base_url, href) and href not in visited:
                 to_visit.put_nowait(href)
 
