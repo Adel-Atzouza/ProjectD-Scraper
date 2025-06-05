@@ -6,6 +6,7 @@ from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from typing import List, Set
 from datetime import datetime
+from collections import defaultdict
 from crawl4ai import (
     AsyncWebCrawler,
     BrowserConfig,
@@ -14,19 +15,22 @@ from crawl4ai import (
 )
 from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 
-# -------------------- CONFIG --------------------
-START_URLS = [
-    "https://www.sportpuntgouda.nl/"
-]
-MAX_CONCURRENT = 15
+START_URLS = ["https://www.sportpuntgouda.nl/"]
+MAX_CONCURRENT = 5
 EXCLUDE_EXTENSIONS = [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".zip", ".rar"]
 
-# -------------------- FILTER --------------------
 def is_excluded(url: str) -> bool:
     return any(url.lower().endswith(ext) for ext in EXCLUDE_EXTENSIONS)
 
-# -------------------- BATCHED URL DISCOVERY --------------------
-async def collect_internal_urls(crawler, start_url: str, batch_size=15) -> Set[str]:
+def clean_markdown_from_soup(soup):
+    lines = []
+    for el in soup.find_all(["h1", "h2", "h3", "p", "li", "ul", "ol", "a"]):
+        text = el.get_text(strip=True)
+        if text and len(text) > 20 and not re.search(r"cookie|toestemming", text, re.I):
+            lines.append(text)
+    return "\n\n".join(lines)
+
+async def collect_internal_urls(crawler, start_url: str, batch_size=5) -> Set[str]:
     to_visit = set([start_url])
     visited = set()
     discovered = set()
@@ -59,7 +63,6 @@ async def collect_internal_urls(crawler, start_url: str, batch_size=15) -> Set[s
 
     return discovered
 
-# -------------------- BATCHED SCRAPING --------------------
 async def crawl_parallel(urls: List[str], max_concurrent: int):
     print("\n=== Parallel Crawling gestart ===")
     date_str = datetime.now().strftime("%Y-%m-%d")
@@ -67,9 +70,9 @@ async def crawl_parallel(urls: List[str], max_concurrent: int):
     os.makedirs(output_dir, exist_ok=True)
 
     browser_config = BrowserConfig(headless=True)
-    crawl_config = CrawlerRunConfig(cache_mode=CacheMode.BYPASS,markdown_generator=DefaultMarkdownGenerator())
+    crawl_config = CrawlerRunConfig(cache_mode=CacheMode.BYPASS, markdown_generator=DefaultMarkdownGenerator())
 
-    success, fail = 0, 0
+    domain_results = defaultdict(list)
 
     async with AsyncWebCrawler(config=browser_config) as crawler:
         for i in range(0, len(urls), max_concurrent):
@@ -80,74 +83,30 @@ async def crawl_parallel(urls: List[str], max_concurrent: int):
             for url, res in zip(batch, results_batch):
                 if isinstance(res, Exception):
                     print(f" Exception @ {url}: {res}")
-                    fail += 1
+                    continue
                 elif res.success:
                     html = res.html
                     soup = BeautifulSoup(html, "html.parser")
-
-                    def extract_text(selector):
-                        el = soup.select_one(selector)
-                        return el.get_text(strip=True) if el else ""
-
-                    def extract_email():
-                        text = soup.get_text()
-                        match = re.search(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", text)
-                        return match.group(0) if match else ""
-
-                    def extract_phone():
-                        text = soup.get_text()
-                        match = re.search(r"(?:\+31|0)[1-9][0-9\s\-]{8,}", text)
-                        return match.group(0).strip() if match else ""
-
                     titel = soup.title.string.strip() if soup.title else "Onbekend"
-                    email = extract_email()
-                    telefoon = extract_phone()
-
-                    meta_description = extract_text("meta[name='description']")
-                    if "gegevens die door deze provider" in meta_description.lower() or len(meta_description) < 50:
-                        paragraphs = soup.find_all("p")
-                        content_source = "niet gevonden"
-                        for p in paragraphs:
-                            txt = p.get_text(strip=True)
-                            if "gegevens die door deze provider" not in txt.lower() and len(txt) > 50:
-                                summary = txt
-                                content_source = "eerste-paragraaf"
-                                break
-                        else:
-                            summary = ""
-                    else:
-                        summary = meta_description
-                        content_source = "meta-tag"
-
-                    raw_text = soup.get_text(separator="\n", strip=True)
+                    summary = clean_markdown_from_soup(soup)
 
                     result = {
                         "url": url,
                         "titel": titel,
-                        "raw_text": raw_text,
-                        "telefoon": telefoon,
-                        "email": email,
-                        "meta": {
-                            "gevonden_op": content_source
-                        }
+                        "samenvatting": summary
                     }
 
-                    parsed = urlparse(url)
-                    safe_path = re.sub(r'[^a-zA-Z0-9_-]', '_', parsed.path.strip('/')) or "root"
-                    filename = f"{parsed.netloc}_{safe_path}.json"
-                    filepath = os.path.join(output_dir, filename)
-                    with open(filepath, "w", encoding="utf-8") as f:
-                        json.dump(result, f, ensure_ascii=False, indent=2)
+                    netloc = urlparse(url).netloc
+                    domain_results[netloc].append(result)
+                    print(f" {url} (toegevoegd aan {netloc})")
 
-                    print(f" {url} (opgeslagen als {filename})")
-                    success += 1
-                else:
-                    print(f" Failed @ {url}: {res.error_message}")
-                    fail += 1
+    for domain, results in domain_results.items():
+        filepath = os.path.join(output_dir, f"{domain}.json")
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(results, f, ensure_ascii=False, indent=2)
 
-    print(f"\n Samenvatting:  {success} |  {fail}")
+    print(f"\nSamenvatting opgeslagen per domein in map: {output_dir}")
 
-# -------------------- MAIN --------------------
 async def main():
     browser_config = BrowserConfig(headless=True)
     crawler = AsyncWebCrawler(config=browser_config)
