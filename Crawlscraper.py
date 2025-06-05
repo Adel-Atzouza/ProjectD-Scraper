@@ -16,7 +16,7 @@ from crawl4ai import (
 from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 
 START_URLS = ["https://www.sportpuntgouda.nl/"]
-MAX_CONCURRENT = 5 #aantal paralell request 
+MAX_CONCURRENT = 15 #aantal paralell request 
 EXCLUDE_EXTENSIONS = [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".zip", ".rar"]
 
 #filter voor urls
@@ -33,7 +33,7 @@ def clean_markdown_from_soup(soup):
     return "\n\n".join(lines)
 
 #site crawlen beginnend bij de start url en verzamelt zo alle links in batches van 5, maar kan ook 10 of 15. ligt aan het syteem waaropt tie runt
-async def collect_internal_urls(crawler, start_url: str, batch_size=5) -> Set[str]:
+async def collect_internal_urls(crawler, start_url: str, batch_size=15) -> Set[str]:
     to_visit = set([start_url])
     visited = set()
     discovered = set()
