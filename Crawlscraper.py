@@ -1,5 +1,7 @@
 import os
 import re
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 import json
 import asyncio
 from urllib.parse import urljoin, urlparse
@@ -21,11 +23,11 @@ START_URLS = ["https://www.sportpuntgouda.nl/"]
 MAX_CONCURRENT = 15 #aantal paralell request 
 EXCLUDE_EXTENSIONS = [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".zip", ".rar"]
 
-#filter voor urls
+# filter voor urls
 def is_excluded(url: str) -> bool:
     return any(url.lower().endswith(ext) for ext in EXCLUDE_EXTENSIONS)
 
-#haal de relavante tekstblokken uit de html en haal cookies eruit
+# haal de relavante tekstblokken uit de html en haal cookies eruit
 def clean_text(markdown: str) -> str:
     markdown = re.sub(r"(?m)^.*\|.*\|.*$", "", markdown)
     markdown = re.sub(r"\[(.*?)\]\([^)]+\)", r"\1", markdown)
@@ -41,7 +43,7 @@ def extract_title(md: str) -> str:
         if line.startswith("## "): return line[3:].strip()
     return "Onbekend"
 
-#site crawlen beginnend bij de start url en verzamelt zo alle links in batches van 5, maar kan ook 10 of 15. ligt aan het syteem waaropt tie runt
+# site crawlen beginnend bij de start url en verzamelt zo alle links in batches van 5, maar kan ook 10 of 15. ligt aan het syteem waaropt tie runt
 async def collect_internal_urls(crawler, start_url: str, batch_size=15) -> Set[str]:
     to_visit = set([start_url])
     visited = set()
@@ -155,5 +157,3 @@ async def main():
     finally:
         await crawler.close()
 
-if __name__ == "__main__":
-    asyncio.run(main())
