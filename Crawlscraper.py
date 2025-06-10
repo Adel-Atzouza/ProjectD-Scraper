@@ -75,6 +75,21 @@ async def collect_internal_urls(crawler, start_url: str, batch_size=15) -> Set[s
 
     return discovered
 
+async def run_one_url(url: str):
+    browser_config = BrowserConfig(headless=True)
+    crawler = AsyncWebCrawler(config=browser_config)
+    await crawler.start()
+
+    try:
+        print(f"\n Interne links verzamelen vanaf: {url}")
+        found_urls = await collect_internal_urls(crawler, url, batch_size=MAX_CONCURRENT)
+        print(f"🔗 {len(found_urls)} gevonden vanaf {url}")
+
+        await crawl_parallel(list(found_urls), MAX_CONCURRENT)
+
+    finally:
+        await crawler.close()
+
 async def crawl_parallel(urls: List[str], max_concurrent: int):
     print("\n=== Parallel Crawling gestart ===")
 
