@@ -1,6 +1,7 @@
 import scrapy
 from scrapy_playwright.page import PageMethod
 
+
 class DickVanDijkhalSpider(scrapy.Spider):
     name = "dickvandijkhal_zalen"
     start_urls = ["https://www.sportpuntgouda.nl/dick-van-dijkhal"]
@@ -56,7 +57,8 @@ class DickVanDijkhalSpider(scrapy.Spider):
             self.logger.error(f"❌ Fout bij verwerken van {pagina_url}: {e}")
 
     def errback_log(self, failure):
-        self.logger.error(f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
+        self.logger.error(
+            f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
 
 
 # import scrapy

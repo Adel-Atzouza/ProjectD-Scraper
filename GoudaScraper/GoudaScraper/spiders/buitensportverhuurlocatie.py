@@ -1,6 +1,7 @@
 import scrapy
 from scrapy_playwright.page import PageMethod
 
+
 class VerhuurSpider(scrapy.Spider):
     name = "verhuur_buitensport"
     start_urls = ["https://www.sportpuntgouda.nl/verhuur_2"]
@@ -9,13 +10,16 @@ class VerhuurSpider(scrapy.Spider):
         "FEEDS": {
             "verhuur_locaties.csv": {
                 "format": "csv",
-                "fields": ["categorie", "sportpark", "pagina_url", "contact_tel", "algemene_contact_email"],
-                "encoding": "utf8"
-            }
-        },
+                "fields": [
+                    "categorie",
+                    "sportpark",
+                    "pagina_url",
+                    "contact_tel",
+                    "algemene_contact_email"],
+                "encoding": "utf8"}},
         "DOWNLOAD_HANDLERS": {
             "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
-            "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+                    "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
         },
         "TWISTED_REACTOR": "twisted.internet.asyncioreactor.AsyncioSelectorReactor",
         "PLAYWRIGHT_BROWSER_TYPE": "chromium",
@@ -33,7 +37,8 @@ class VerhuurSpider(scrapy.Spider):
 
     def parse_main(self, response):
         # Zoek link naar "Buitensport"
-        buitensport_url = response.css("a:contains('Buitensport')::attr(href)").get()
+        buitensport_url = response.css(
+            "a:contains('Buitensport')::attr(href)").get()
         if buitensport_url:
             yield response.follow(
                 url=buitensport_url,
@@ -42,12 +47,15 @@ class VerhuurSpider(scrapy.Spider):
                 errback=self.errback_log
             )
         else:
-            self.logger.warning("⚠️ Geen link naar Buitensport gevonden op verhuur_2")
+            self.logger.warning(
+                "⚠️ Geen link naar Buitensport gevonden op verhuur_2")
 
     def parse_buitensport(self, response):
         # Lees algemene SPORT•GOUDA-footergegevens
-        footer = response.xpath("//div[contains(@class, 'col-md-4') and contains(., 'SPORT•GOUDA')]")
-        algemene_email = footer.xpath(".//a[starts-with(@href, 'mailto:')]/text()").get(default="").strip()
+        footer = response.xpath(
+            "//div[contains(@class, 'col-md-4') and contains(., 'SPORT•GOUDA')]")
+        algemene_email = footer.xpath(
+            ".//a[starts-with(@href, 'mailto:')]/text()").get(default="").strip()
 
         # Klik door naar elk sportpark (linkkaarten)
         for link in response.css(".card a::attr(href)").getall():
@@ -80,8 +88,8 @@ class VerhuurSpider(scrapy.Spider):
             }
 
     def errback_log(self, failure):
-        self.logger.error(f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
-
+        self.logger.error(
+            f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
 
 
 # import scrapy
@@ -148,7 +156,7 @@ class VerhuurSpider(scrapy.Spider):
 #                 "categorie": "Buitensport",
 #                 "sportpark": naam,
 #                 "pagina_url": pagina_url,
-#                 "contact_tel": contact_tekst,  
+#                 "contact_tel": contact_tekst,
 #                 "algemene_contact_email": algemene_contact
 #             }
 
