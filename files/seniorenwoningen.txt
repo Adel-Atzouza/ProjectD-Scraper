@@ -89,10 +89,9 @@
  'meer informatie nodigDe informatie is niet correctDe pagina is moeilijk te '
  'begrijpenToelichting:Mag de webbeheerder contact met u opnemen over uw '
  'beoordeling?JaNeeDe webbeheerder kan alleen contact met u opnemen, als u uw '
- "gegevens invult.Naam: *Bedrijf:E-mailadres: *Anti-spamvraag: *Is het 's "
- 'nachts licht of donker?\xa0 Verstuur mijn beoordelingVergelijk '
- 'hulpaanbodPopulaire onderwerpenBurenruzie of '
- 'overlastBijstandCliëntondersteuningDagbesteding '
+ 'gegevens invult.Naam: *Bedrijf:E-mailadres: *Anti-spamvraag: *Is sneeuw wit '
+ 'of rood?\xa0 Verstuur mijn beoordelingVergelijk hulpaanbodPopulaire '
+ 'onderwerpenBurenruzie of overlastBijstandCliëntondersteuningDagbesteding '
  'zoekenDagopvangDaklozenopvangHulp bij het '
  'huishoudenGoudvoorelkaarHuurwoningenJeugdhulpNederlandse '
  'taalMantelzorgwaarderingParkeerkaartSeniorenwoning of zorgwoningSoorten '

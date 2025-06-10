@@ -1,4 +1,3 @@
-from testscraper import UniversalSpider
 import sys
 import os
 
@@ -10,6 +9,7 @@ sys.path.append(
         )
     )
 )
+from testscraper import UniversalSpider
 
 
 def test_is_internal_returns_true_for_same_domain():
