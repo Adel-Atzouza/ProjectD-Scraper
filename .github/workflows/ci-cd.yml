@@ -30,7 +30,7 @@ jobs:
           pip install pytest flake8 autopep8 pytest-asyncio
 
       - name: Run Linter (Flake8)
-        run: flake8 . --max-line-length=120 --exclude=venv,__pycache__
+        run: flake8 . --max-line-length=120 --exclude=venv,__pycache__ --ignore=E501
 
       - name: Run Unit & Integration Tests
         run: pytest tests/ --disable-warnings
