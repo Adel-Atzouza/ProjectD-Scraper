@@ -1,5 +1,6 @@
 import scrapy
 
+
 class OrganisatiesSpider(scrapy.Spider):
     name = 'organisaties'
     start_urls = ['https://www.goudawijzer.nl/is/organisaties?q=&size=1000']
@@ -21,9 +22,11 @@ class OrganisatiesSpider(scrapy.Spider):
 
         for org in organisaties:
             naam = org.css('.searchResults__contentHeader a::text').get()
-            beschrijving = org.css('.searchResults__content.-textContainer p::text').get()
+            beschrijving = org.css(
+                '.searchResults__content.-textContainer p::text').get()
             telefoon = org.css('a[href^="tel:"]::text').get()
-            email = org.css('a[href^="mailto:"]::attr(href)').re_first(r'mailto:(.*)')
+            email = org.css('a[href^="mailto:"]::attr(href)').re_first(
+                r'mailto:(.*)')
             website = org.css('a.external::attr(href)').get()
             straat = org.css('span.-iconAddress::text').get()
             postcode = org.css('span.-locationZip::text').get()
@@ -38,7 +41,8 @@ class OrganisatiesSpider(scrapy.Spider):
                 'adres': (adres or '').strip(),
             }
 
-        next_page = response.css('.pagination li a[aria-label="Volgende"]::attr(href)').get()
+        next_page = response.css(
+            '.pagination li a[aria-label="Volgende"]::attr(href)').get()
         if next_page:
             yield response.follow(next_page, callback=self.parse)
 

@@ -1,3 +1,4 @@
+from testscraper import UniversalSpider
 import sys
 import os
 
@@ -5,12 +6,8 @@ import os
 sys.path.append(
     os.path.abspath(
         os.path.join(
-            os.path.dirname(__file__), "../../TestScraper/universal_scraper/spiders"
-        )
-    )
-)
-
-from testscraper import UniversalSpider
+            os.path.dirname(__file__),
+            "../../TestScraper/universal_scraper/spiders")))
 
 
 def test_is_internal_returns_true_for_same_domain():

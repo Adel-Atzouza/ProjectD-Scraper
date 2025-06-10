@@ -1,6 +1,7 @@
 import scrapy
 from scrapy_playwright.page import PageMethod
 
+
 class SportcentrumMammoetSpider(scrapy.Spider):
     name = "sportcentrummammoet_zalen"
     start_urls = ["https://www.sportpuntgouda.nl/sportcentrum-de-mammoet"]
@@ -56,7 +57,8 @@ class SportcentrumMammoetSpider(scrapy.Spider):
             self.logger.error(f"❌ Fout bij verwerken van {pagina_url}: {e}")
 
     def errback_log(self, failure):
-        self.logger.error(f"❌ Pagina mislukt: {failure.request.url} - {repr(failure)}")
+        self.logger.error(
+            f"❌ Pagina mislukt: {failure.request.url} - {repr(failure)}")
 
 
 # import scrapy

@@ -6,7 +6,8 @@ import hashlib
 import re
 
 
-# Hier kun je nieuwe buttonteksten toevoegen die vaak gebruikt worden voor paginering
+# Hier kun je nieuwe buttonteksten toevoegen die vaak gebruikt worden voor
+# paginering
 BUTTON_TEXTS = [
     "load more",
     "see more",
@@ -100,7 +101,8 @@ class UniversalSpider(scrapy.Spider):
         if response.meta.get("playwright"):
             page = response.meta["playwright_page"]
 
-        # Soms komt er een cookie popup. deze blokeert de scraper om de html te scrapen. clik deze weg.
+        # Soms komt er een cookie popup. deze blokeert de scraper om de html te
+        # scrapen. clik deze weg.
         for cookie_text in COOKIE_KEYWORDS:
             try:
                 locator = page.locator(f'button:has-text("{cookie_text}")')
@@ -145,7 +147,7 @@ class UniversalSpider(scrapy.Spider):
                             await page.wait_for_timeout(1000)
                             clicked = True
                             break  # Één tegelijk om te zorgen dat DOM goed refresht
-                    except:
+                    except BaseException:
                         continue
                 if not clicked:
                     break
@@ -168,7 +170,8 @@ class UniversalSpider(scrapy.Spider):
         self.visited_hashes.add(content_hash)
         self.hash_url_map[content_hash] = response.url
         # fallback_text = await page.evaluate("document.body.innerText")
-        # Dit hierboven is mogelijk een extra optie om alle tekst dat zichtbaar is te pakken.
+        # Dit hierboven is mogelijk een extra optie om alle tekst dat zichtbaar
+        # is te pakken.
 
         with open("output.csv", "a", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=["url", "raw_text"])
@@ -183,7 +186,8 @@ class UniversalSpider(scrapy.Spider):
             for pattern in irrelevant_patterns:
                 raw_text = raw_text.replace(pattern, "")
             raw_text = re.sub(r"\[\#.*?\#\]", "", raw_text)
-            raw_text = re.sub(r"var\s+[A-Z_]+\s*=\s*['\"].*?['\"];", "", raw_text)
+            raw_text = re.sub(
+                r"var\s+[A-Z_]+\s*=\s*['\"].*?['\"];", "", raw_text)
             raw_text = re.sub(
                 r"Cookieverklaring.*?Dataduiker", "", raw_text, flags=re.DOTALL
             )
@@ -211,7 +215,8 @@ class UniversalSpider(scrapy.Spider):
 
     def is_internal(self, url):
         domain = urlparse(url).netloc
-        return any(domain.endswith(allowed) for allowed in self.allowed_domains)
+        return any(domain.endswith(allowed)
+                   for allowed in self.allowed_domains)
 
     def closed(self, reason):
         output_file = "output.csv"

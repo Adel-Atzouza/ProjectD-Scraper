@@ -1,6 +1,7 @@
 import scrapy
 from scrapy_playwright.page import PageMethod
 
+
 class GymzaalSpider(scrapy.Spider):
     name = "gymzalen"
     start_urls = ["https://www.sportpuntgouda.nl/gymzalen-en-sportzalen"]
@@ -41,17 +42,22 @@ class GymzaalSpider(scrapy.Spider):
         try:
             cards = response.css("div.card-stretch-hover")
             if not cards:
-                self.logger.warning(f"⚠️ Geen gymzalen gevonden op {response.url}")
+                self.logger.warning(
+                    f"⚠️ Geen gymzalen gevonden op {
+                        response.url}")
 
             for card in cards:
                 naam = card.css("h5.card-title::text").get(default="").strip()
                 paragrafen = card.css("p::text").getall()
                 adres_en_wijk = paragrafen[0].strip() if paragrafen else ""
-                afmetingen = card.xpath(".//strong[contains(text(),'Afmetingen')]/following-sibling::text()[1]").get(default="").strip()
-                douches = card.xpath(".//strong[contains(text(),'Douches')]/following-sibling::text()[1]").get(default="").strip()
+                afmetingen = card.xpath(
+                    ".//strong[contains(text(),'Afmetingen')]/following-sibling::text()[1]").get(default="").strip()
+                douches = card.xpath(
+                    ".//strong[contains(text(),'Douches')]/following-sibling::text()[1]").get(default="").strip()
 
                 if not naam:
-                    self.logger.warning("⚠️ Gymzaal zonder naam gevonden, wordt overgeslagen.")
+                    self.logger.warning(
+                        "⚠️ Gymzaal zonder naam gevonden, wordt overgeslagen.")
                     continue
 
                 yield {
@@ -64,11 +70,13 @@ class GymzaalSpider(scrapy.Spider):
                     "douches": douches
                 }
         except Exception as e:
-            self.logger.error(f"❌ Fout tijdens verwerken van gymzalen op {response.url}: {e}")
+            self.logger.error(
+                f"❌ Fout tijdens verwerken van gymzalen op {
+                    response.url}: {e}")
 
     def errback_log(self, failure):
-        self.logger.error(f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
-
+        self.logger.error(
+            f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
 
 
 # import scrapy
@@ -112,7 +120,7 @@ class GymzaalSpider(scrapy.Spider):
 #             naam = card.css("h5.card-title::text").get(default="").strip()
 #             paragrafen = card.css("p::text").getall()
 #             tekst = " ".join(paragrafen).strip()
-            
+
 #             adres_en_wijk = paragrafen[0].strip() if len(paragrafen) > 0 else ""
 #             afmetingen = card.xpath(".//strong[contains(text(),'Afmetingen')]/following-sibling::text()[1]").get(default="").strip()
 #             douches = card.xpath(".//strong[contains(text(),'Douches')]/following-sibling::text()[1]").get(default="").strip()
@@ -132,8 +140,6 @@ class GymzaalSpider(scrapy.Spider):
 # process = CrawlerProcess()
 # process.crawl(GymzaalSpider)
 # process.start()
-
-
 
 
 # import scrapy

@@ -22,21 +22,18 @@ class OnderwerpenSpider(scrapy.Spider):
         for artikel in onderwerp_artikels:
             onderwerp = artikel.css(
                 "a *::text").get()
-            
+
             artikelen = artikel.css(
                 "li a::attr(href)").getall()[1:]
-            
+
             artikelen_titles = artikel.css(
                 "li a::text").getall()
-            
+
             if len(artikelen) < 2:
                 continue
 
-            
             assert len(artikelen) == len(
                 artikelen_titles), "Mismatch in number of artikelen and titles"
-
-
 
             for i, a in enumerate(artikelen):
                 next_page = response.urljoin(a)
@@ -52,28 +49,45 @@ class OnderwerpenSpider(scrapy.Spider):
 
         # artikel = " ".join(response.css("div.container *::text").getall()
         #                    ).replace("\n", " ").strip().replace('\r', ' ')
-        
-        assert len(subsubonderwerpen) == len(subsubonderwerptitles), "Mismatch in number of subonderwerpen and titles"
-        
+
+        assert len(subsubonderwerpen) == len(
+            subsubonderwerptitles), "Mismatch in number of subonderwerpen and titles"
+
         for i, a in enumerate(subsubonderwerpen):
             next_page = response.urljoin(a)
             yield scrapy.Request(next_page, callback=self.parse_artikel_artikel,
-                                    meta={"o": [onderwerp, subonderwerp, subsubonderwerptitles[i], a]})
+                                 meta={"o": [onderwerp, subonderwerp, subsubonderwerptitles[i], a]})
 
     def parse_artikel_artikel(self, response):
         d = response.meta["o"]
         dd = response.css("main.entry-content *::text").getall()
-        artikel = " ".join(dd).replace("  ", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ").replace("\t", " ").replace("\n", " ").strip().replace('\r', ' ')
+        artikel = " ".join(dd).replace(
+            "  ",
+            " ").replace(
+            "  ",
+            " ").replace(
+            "  ",
+            " ").replace(
+                "  ",
+                " ").replace(
+                    "  ",
+                    " ").replace(
+                        "\t",
+                        " ").replace(
+                            "\n",
+                            " ").strip().replace(
+                                '\r',
+            ' ')
         d += [artikel]
         self.data += [d]
-
 
     def save_in_csv(self, data):
         filename = "ingouda_onderwerpen.csv"
         file_path = Path(__file__).parent.parent / filename
         with open(file_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
-            writer.writerow(["onderwerp", "subonderwerp", "2ndsubonderwerp", "link", "description"])
+            writer.writerow(["onderwerp", "subonderwerp",
+                            "2ndsubonderwerp", "link", "description"])
             data = sorted(data, key=lambda x: (x[0]))
             writer.writerows(data)
         print(f"Data saved to {file_path}")

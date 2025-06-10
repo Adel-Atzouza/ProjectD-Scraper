@@ -20,25 +20,29 @@ class SportpuntGoudaSpider(scrapy.Spider):
             for row in rows:
                 if row == rows[1000]:
                     break
-                time_text = row.xpath('.//td[@class="text-nowrap"]/text()[1]').get()
+                time_text = row.xpath(
+                    './/td[@class="text-nowrap"]/text()[1]').get()
                 if time_text:
                     time_text = time_text.strip()
                 else:
                     continue
 
-                activity = row.xpath('.//td[contains(@class, "col-sm-5")]//a/text()').get()
+                activity = row.xpath(
+                    './/td[contains(@class, "col-sm-5")]//a/text()').get()
                 if activity:
                     activity = activity.strip()
                 else:
                     continue
 
-                facility = row.xpath('.//td[contains(@class, "d-none d-sm-table-cell")][1]/text()').get()
+                facility = row.xpath(
+                    './/td[contains(@class, "d-none d-sm-table-cell")][1]/text()').get()
                 if facility:
                     facility = facility.strip()
                 else:
                     continue
 
-                date_row = row.xpath('.//preceding::tr[1][@style="pointer-events: none"]')
+                date_row = row.xpath(
+                    './/preceding::tr[1][@style="pointer-events: none"]')
                 if date_row:
                     current_date = date_row.xpath('.//th/text()').get().strip()
 
