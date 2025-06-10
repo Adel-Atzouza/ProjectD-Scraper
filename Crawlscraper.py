@@ -1,12 +1,6 @@
 from crawl4ai.content_filter_strategy import PruningContentFilter
 from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
-from crawl4ai import (
-    AsyncWebCrawler,
-    BrowserConfig,
-    CrawlerRunConfig,
-    CacheMode,
-    CrawlResult
-)
+from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 from collections import defaultdict
 from datetime import datetime
 from typing import List, Set
@@ -17,11 +11,8 @@ import json
 import os
 import re
 import sys
-sys.path.append(
-    os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__),
-            "../../")))
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 START_URLS = ["https://www.sportpuntgouda.nl/"]
 MAX_CONCURRENT = 15  # aantal paralell request
@@ -34,13 +25,15 @@ EXCLUDE_EXTENSIONS = [
     ".ppt",
     ".pptx",
     ".zip",
-    ".rar"]
+    ".rar",
+]
 
 # filter voor urls
 
 
 def is_excluded(url: str) -> bool:
     return any(url.lower().endswith(ext) for ext in EXCLUDE_EXTENSIONS)
+
 
 # haal de relavante tekstblokken uit de html en haal cookies eruit
 
@@ -50,7 +43,7 @@ def clean_text(markdown: str) -> str:
     markdown = re.sub(r"\[(.*?)\]\([^)]+\)", r"\1", markdown)
     markdown = re.sub(r"#+ ", "", markdown)
     markdown = re.sub(r"\n{3,}", "\n\n", markdown.strip())
-    sentences = re.split(r'(?<=[.!?]) +', markdown)
+    sentences = re.split(r"(?<=[.!?]) +", markdown)
     return " ".join(sentences[:5]).strip()
 
 
@@ -63,23 +56,21 @@ def extract_title(md: str) -> str:
             return line[3:].strip()
     return "Onbekend"
 
+
 # site crawlen beginnend bij de start url en verzamelt zo alle links in
 # batches van 5, maar kan ook 10 of 15. ligt aan het syteem waaropt tie
 # runt
 
 
-async def collect_internal_urls(
-        crawler,
-        start_url: str,
-        batch_size=15) -> Set[str]:
+async def collect_internal_urls(crawler, start_url: str, batch_size=15) -> Set[str]:
     to_visit = set([start_url])
     visited = set()
     discovered = set()
 
     # crawl config.
     crawl_config = CrawlerRunConfig(
-        cache_mode=CacheMode.BYPASS,
-        markdown_generator=DefaultMarkdownGenerator())
+        cache_mode=CacheMode.BYPASS, markdown_generator=DefaultMarkdownGenerator()
+    )
     # unieke sessie-naam per domein
     session_id = f"discovery_{urlparse(start_url).netloc}"
 
@@ -93,19 +84,20 @@ async def collect_internal_urls(
         print(
             f"\n [Batch discovery] {
                 len(discovered) +
-                1} URLs")  # voortgang batch crawling
+                1} URLs"
+        )  # voortgang batch crawling
         # start crawl-taken voor de batch
         tasks = [
-            crawler.arun(
-                url,
-                crawl_config,
-                session_id=session_id) for url in current_batch]
+            crawler.arun(url, crawl_config, session_id=session_id)
+            for url in current_batch
+        ]
         # voert alle taken tegelijk uit en vangt fouten op
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # verwerk resultaten van deze batch
         for url, res in zip(
-                current_batch, results):  # loop door elk res gekoppeld aan url
+            current_batch, results
+        ):  # loop door elk res gekoppeld aan url
             if isinstance(res, Exception):
                 print(f" {url}: {res}")
                 continue
@@ -125,8 +117,11 @@ async def collect_internal_urls(
                         # verwijdert onnodige dingen zoals query strings of
                         # anchors
                         norm = parsed.scheme + "://" + parsed.netloc + parsed.path
-                        if not is_excluded(
-                                norm) and norm not in visited and norm not in to_visit:
+                        if (
+                            not is_excluded(norm)
+                            and norm not in visited
+                            and norm not in to_visit
+                        ):
                             to_visit.add(norm)
                             discovered.add(norm)
 
@@ -147,14 +142,15 @@ async def crawl_parallel(urls: List[str], max_concurrent: int):
         css_selector="main, article, section",
         excluded_selector=".cookie, .cookie-banner, .consent, .privacy",
         markdown_generator=DefaultMarkdownGenerator(
-            content_filter=PruningContentFilter()),
-        stream=False)
+            content_filter=PruningContentFilter()
+        ),
+        stream=False,
+    )
 
     domain_results = defaultdict(list)  # per domein verzamelen
 
     async with AsyncWebCrawler(config=browser_config) as crawler:
         for i in range(0, len(urls), max_concurrent):
-            # Maak batch van de lijst urls(5/10)
             batch = urls[i:i + max_concurrent]
             tasks = [
                 crawler.arun(
@@ -162,8 +158,10 @@ async def crawl_parallel(urls: List[str], max_concurrent: int):
                     crawl_config,
                     session_id=f"batch_{
                         i +
-                        j}") for j,
-                url in enumerate(batch)]  # per url in de batch een taak
+                        j}",
+                )
+                for j, url in enumerate(batch)
+            ]  # per url in de batch een taak
             # runt tegelijk
             results_batch = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -178,11 +176,7 @@ async def crawl_parallel(urls: List[str], max_concurrent: int):
                 summary = clean_text(markdown)
                 title = extract_title(markdown)
 
-                result = {
-                    "url": url,
-                    "titel": title,
-                    "samenvatting": summary
-                }
+                result = {"url": url, "titel": title, "samenvatting": summary}
 
                 netloc = urlparse(url).netloc
                 domain_results[netloc].append(result)
@@ -206,7 +200,9 @@ async def main():
         all_urls = set()
         for start_url in START_URLS:
             print(f"\n Interne links verzamelen vanaf: {start_url}")
-            found_urls = await collect_internal_urls(crawler, start_url, batch_size=MAX_CONCURRENT)
+            found_urls = await collect_internal_urls(
+                crawler, start_url, batch_size=MAX_CONCURRENT
+            )
             print(f"🔗 {len(found_urls)} gevonden vanaf {start_url}")
             all_urls.update(found_urls)
 

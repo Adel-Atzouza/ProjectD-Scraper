@@ -11,10 +11,15 @@ class GroenhovenbadSpider(scrapy.Spider):
             "verhuur_locaties.csv": {
                 "format": "csv",
                 "fields": [
-                    "categorie", "locatie", "pagina_url",
-                    "item_naam", "afmeting", "bijzonderheden", "tarief"
+                    "categorie",
+                    "locatie",
+                    "pagina_url",
+                    "item_naam",
+                    "afmeting",
+                    "bijzonderheden",
+                    "tarief",
                 ],
-                "encoding": "utf8"
+                "encoding": "utf8",
             }
         },
         "DOWNLOAD_HANDLERS": {
@@ -31,10 +36,10 @@ class GroenhovenbadSpider(scrapy.Spider):
             url=self.start_urls[0],
             meta={
                 "playwright": True,
-                "playwright_page_methods": [PageMethod("wait_for_timeout", 1000)]
+                "playwright_page_methods": [PageMethod("wait_for_timeout", 1000)],
             },
             callback=self.parse_groenhovenbad,
-            errback=self.errback_log
+            errback=self.errback_log,
         )
 
     def parse_groenhovenbad(self, response):
@@ -46,8 +51,7 @@ class GroenhovenbadSpider(scrapy.Spider):
             for naam in response.css("h5.card-title.text-theme-1::text"):
                 bad_naam = naam.get().strip()
                 if not bad_naam:
-                    self.logger.warning(
-                        f"⚠️ Lege badnaam gevonden op {pagina_url}")
+                    self.logger.warning(f"⚠️ Lege badnaam gevonden op {pagina_url}")
                     continue
 
                 yield {
@@ -57,7 +61,7 @@ class GroenhovenbadSpider(scrapy.Spider):
                     "item_naam": bad_naam,
                     "afmeting": "",
                     "bijzonderheden": "",
-                    "tarief": ""
+                    "tarief": "",
                 }
 
             # Deel 2: verhuur-tarieven onderaan
@@ -85,7 +89,8 @@ class GroenhovenbadSpider(scrapy.Spider):
 
                     if not current_name:
                         self.logger.warning(
-                            f"⚠️ Rij met afmetingen/tarief maar zonder item_naam op {pagina_url}")
+                            f"⚠️ Rij met afmetingen/tarief maar zonder item_naam op {pagina_url}"
+                        )
                         continue
 
                     yield {
@@ -95,16 +100,16 @@ class GroenhovenbadSpider(scrapy.Spider):
                         "item_naam": current_name,
                         "afmeting": afmeting,
                         "bijzonderheden": bijzonderheden,
-                        "tarief": prijs
+                        "tarief": prijs,
                     }
 
         except Exception as e:
-            self.logger.error(
-                f"❌ Fout bij het verwerken van {pagina_url}: {e}")
+            self.logger.error(f"❌ Fout bij het verwerken van {pagina_url}: {e}")
 
     def errback_log(self, failure):
         self.logger.error(
-            f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
+            f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}"
+        )
 
 
 # import scrapy

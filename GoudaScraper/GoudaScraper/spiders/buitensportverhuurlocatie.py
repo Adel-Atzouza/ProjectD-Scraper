@@ -15,11 +15,14 @@ class VerhuurSpider(scrapy.Spider):
                     "sportpark",
                     "pagina_url",
                     "contact_tel",
-                    "algemene_contact_email"],
-                "encoding": "utf8"}},
+                    "algemene_contact_email",
+                ],
+                "encoding": "utf8",
+            }
+        },
         "DOWNLOAD_HANDLERS": {
             "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
-                    "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+            "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
         },
         "TWISTED_REACTOR": "twisted.internet.asyncioreactor.AsyncioSelectorReactor",
         "PLAYWRIGHT_BROWSER_TYPE": "chromium",
@@ -32,30 +35,35 @@ class VerhuurSpider(scrapy.Spider):
             url=self.start_urls[0],
             meta={"playwright": True},
             callback=self.parse_main,
-            errback=self.errback_log
+            errback=self.errback_log,
         )
 
     def parse_main(self, response):
         # Zoek link naar "Buitensport"
-        buitensport_url = response.css(
-            "a:contains('Buitensport')::attr(href)").get()
+        buitensport_url = response.css("a:contains('Buitensport')::attr(href)").get()
         if buitensport_url:
             yield response.follow(
                 url=buitensport_url,
-                meta={"playwright": True, "playwright_page_methods": [PageMethod("wait_for_timeout", 1000)]},
+                meta={
+                    "playwright": True,
+                    "playwright_page_methods": [PageMethod("wait_for_timeout", 1000)],
+                },
                 callback=self.parse_buitensport,
-                errback=self.errback_log
+                errback=self.errback_log,
             )
         else:
-            self.logger.warning(
-                "⚠️ Geen link naar Buitensport gevonden op verhuur_2")
+            self.logger.warning("⚠️ Geen link naar Buitensport gevonden op verhuur_2")
 
     def parse_buitensport(self, response):
         # Lees algemene SPORT•GOUDA-footergegevens
         footer = response.xpath(
-            "//div[contains(@class, 'col-md-4') and contains(., 'SPORT•GOUDA')]")
-        algemene_email = footer.xpath(
-            ".//a[starts-with(@href, 'mailto:')]/text()").get(default="").strip()
+            "//div[contains(@class, 'col-md-4') and contains(., 'SPORT•GOUDA')]"
+        )
+        algemene_email = (
+            footer.xpath(".//a[starts-with(@href, 'mailto:')]/text()")
+            .get(default="")
+            .strip()
+        )
 
         # Klik door naar elk sportpark (linkkaarten)
         for link in response.css(".card a::attr(href)").getall():
@@ -64,10 +72,10 @@ class VerhuurSpider(scrapy.Spider):
                 meta={
                     "playwright": True,
                     "playwright_page_methods": [PageMethod("wait_for_timeout", 1000)],
-                    "algemene_email": algemene_email
+                    "algemene_email": algemene_email,
                 },
                 callback=self.parse_sportpark,
-                errback=self.errback_log
+                errback=self.errback_log,
             )
 
     def parse_sportpark(self, response):
@@ -84,12 +92,13 @@ class VerhuurSpider(scrapy.Spider):
                 "sportpark": naam,
                 "pagina_url": pagina_url,
                 "contact_tel": tel,
-                "algemene_contact_email": algemene_email
+                "algemene_contact_email": algemene_email,
             }
 
     def errback_log(self, failure):
         self.logger.error(
-            f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
+            f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}"
+        )
 
 
 # import scrapy

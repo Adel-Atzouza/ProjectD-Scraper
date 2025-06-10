@@ -11,7 +11,7 @@ class SportcentrumMammoetSpider(scrapy.Spider):
             "verhuur_locaties.csv": {
                 "format": "csv",
                 "fields": ["categorie", "locatie", "pagina_url", "zaal_naam"],
-                "encoding": "utf8"
+                "encoding": "utf8",
             }
         },
         "DOWNLOAD_HANDLERS": {
@@ -29,10 +29,10 @@ class SportcentrumMammoetSpider(scrapy.Spider):
                 url=url,
                 meta={
                     "playwright": True,
-                    "playwright_page_methods": [PageMethod("wait_for_timeout", 1000)]
+                    "playwright_page_methods": [PageMethod("wait_for_timeout", 1000)],
                 },
                 callback=self.parse_zalen,
-                errback=self.errback_log
+                errback=self.errback_log,
             )
 
     def parse_zalen(self, response):
@@ -51,14 +51,13 @@ class SportcentrumMammoetSpider(scrapy.Spider):
                         "categorie": "Binnensport",
                         "locatie": locatie,
                         "pagina_url": pagina_url,
-                        "zaal_naam": zaal_naam
+                        "zaal_naam": zaal_naam,
                     }
         except Exception as e:
             self.logger.error(f"❌ Fout bij verwerken van {pagina_url}: {e}")
 
     def errback_log(self, failure):
-        self.logger.error(
-            f"❌ Pagina mislukt: {failure.request.url} - {repr(failure)}")
+        self.logger.error(f"❌ Pagina mislukt: {failure.request.url} - {repr(failure)}")
 
 
 # import scrapy

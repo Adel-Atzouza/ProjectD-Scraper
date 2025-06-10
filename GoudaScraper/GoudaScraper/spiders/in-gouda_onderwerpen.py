@@ -20,25 +20,26 @@ class OnderwerpenSpider(scrapy.Spider):
     def parse_onderwerpen(self, response):
         onderwerp_artikels = response.css("li.subject-themes-grid-item")
         for artikel in onderwerp_artikels:
-            onderwerp = artikel.css(
-                "a *::text").get()
+            onderwerp = artikel.css("a *::text").get()
 
-            artikelen = artikel.css(
-                "li a::attr(href)").getall()[1:]
+            artikelen = artikel.css("li a::attr(href)").getall()[1:]
 
-            artikelen_titles = artikel.css(
-                "li a::text").getall()
+            artikelen_titles = artikel.css("li a::text").getall()
 
             if len(artikelen) < 2:
                 continue
 
             assert len(artikelen) == len(
-                artikelen_titles), "Mismatch in number of artikelen and titles"
+                artikelen_titles
+            ), "Mismatch in number of artikelen and titles"
 
             for i, a in enumerate(artikelen):
                 next_page = response.urljoin(a)
-                yield scrapy.Request(next_page, callback=self.parse_artikel,
-                                     meta={"onderwerp": onderwerp, "subonderwerp": artikelen_titles[i]})
+                yield scrapy.Request(
+                    next_page,
+                    callback=self.parse_artikel,
+                    meta={"onderwerp": onderwerp, "subonderwerp": artikelen_titles[i]},
+                )
 
     def parse_artikel(self, response):
         onderwerp = response.meta["onderwerp"]
@@ -51,33 +52,32 @@ class OnderwerpenSpider(scrapy.Spider):
         #                    ).replace("\n", " ").strip().replace('\r', ' ')
 
         assert len(subsubonderwerpen) == len(
-            subsubonderwerptitles), "Mismatch in number of subonderwerpen and titles"
+            subsubonderwerptitles
+        ), "Mismatch in number of subonderwerpen and titles"
 
         for i, a in enumerate(subsubonderwerpen):
             next_page = response.urljoin(a)
-            yield scrapy.Request(next_page, callback=self.parse_artikel_artikel,
-                                 meta={"o": [onderwerp, subonderwerp, subsubonderwerptitles[i], a]})
+            yield scrapy.Request(
+                next_page,
+                callback=self.parse_artikel_artikel,
+                meta={"o": [onderwerp, subonderwerp, subsubonderwerptitles[i], a]},
+            )
 
     def parse_artikel_artikel(self, response):
         d = response.meta["o"]
         dd = response.css("main.entry-content *::text").getall()
-        artikel = " ".join(dd).replace(
-            "  ",
-            " ").replace(
-            "  ",
-            " ").replace(
-            "  ",
-            " ").replace(
-                "  ",
-                " ").replace(
-                    "  ",
-                    " ").replace(
-                        "\t",
-                        " ").replace(
-                            "\n",
-                            " ").strip().replace(
-                                '\r',
-            ' ')
+        artikel = (
+            " ".join(dd)
+            .replace("  ", " ")
+            .replace("  ", " ")
+            .replace("  ", " ")
+            .replace("  ", " ")
+            .replace("  ", " ")
+            .replace("\t", " ")
+            .replace("\n", " ")
+            .strip()
+            .replace("\r", " ")
+        )
         d += [artikel]
         self.data += [d]
 
@@ -86,8 +86,9 @@ class OnderwerpenSpider(scrapy.Spider):
         file_path = Path(__file__).parent.parent / filename
         with open(file_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
-            writer.writerow(["onderwerp", "subonderwerp",
-                            "2ndsubonderwerp", "link", "description"])
+            writer.writerow(
+                ["onderwerp", "subonderwerp", "2ndsubonderwerp", "link", "description"]
+            )
             data = sorted(data, key=lambda x: (x[0]))
             writer.writerows(data)
         print(f"Data saved to {file_path}")

@@ -15,7 +15,7 @@ class ContactenSpider(scrapy.Spider):
         "https://www.sportpuntgouda.nl/sociaal-domein",
         "https://www.sportpuntgouda.nl/tipkaart-zorgverleners",
         "https://www.sportpuntgouda.nl/kenniscentrum",
-        "https://www.sportpuntgouda.nl/gouds-leefstijlakkoord"
+        "https://www.sportpuntgouda.nl/gouds-leefstijlakkoord",
     ]
 
     custom_settings = {
@@ -29,11 +29,14 @@ class ContactenSpider(scrapy.Spider):
                     "telefoon",
                     "email",
                     "pagina_url",
-                    "beschrijving"],
-                "encoding": "utf8"}},
+                    "beschrijving",
+                ],
+                "encoding": "utf8",
+            }
+        },
         "DOWNLOAD_HANDLERS": {
             "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
-                    "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+            "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
         },
         "TWISTED_REACTOR": "twisted.internet.asyncioreactor.AsyncioSelectorReactor",
         "PLAYWRIGHT_BROWSER_TYPE": "chromium",
@@ -51,21 +54,26 @@ class ContactenSpider(scrapy.Spider):
             "valpreventie": "Contact voor deelname of samenwerking rondom valpreventieprogramma’s voor ouderen.",
             "gezond eten": "Regisseur van het programma 'Gouda Goed Bezig' met focus op gezonde leefstijl (JOGG).",
             "kenniscentrum": "Strategisch aanspreekpunt voor kennisdeling en datagebruik binnen SPORT•GOUDA.",
-            "gouds leefstijlakkoord": "Aanspreekpunt voor vragen over het Gouds Leefstijlakkoord en gezondheidsbeleid."}
+            "gouds leefstijlakkoord": "Aanspreekpunt voor vragen over het Gouds Leefstijlakkoord en gezondheidsbeleid.",
+        }
         return beschrijvingen.get(categorie, "")
 
     def start_requests(self):
         for url in self.start_urls:
             yield scrapy.Request(
                 url=url,
-                meta={"playwright": True, "playwright_page_methods": [PageMethod("wait_for_timeout", 1000)]},
+                meta={
+                    "playwright": True,
+                    "playwright_page_methods": [PageMethod("wait_for_timeout", 1000)],
+                },
                 callback=self.parse,
-                errback=self.errback_log
+                errback=self.errback_log,
             )
 
     def errback_log(self, failure):
         self.logger.error(
-            f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
+            f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}"
+        )
 
     def parse(self, response):
         url = response.url
@@ -73,16 +81,17 @@ class ContactenSpider(scrapy.Spider):
         try:
             if "beweegmakelaars" in url:
                 for card in response.css(".card-stretch-hover"):
-                    naam = card.css(
-                        "h5.card-title::text").get(default="").strip()
-                    tekst = " ".join(
-                        card.xpath(".//p//text()").getall()).strip()
-                    email = card.css("a[href^='mailto:']::attr(href)").get(
-                        default="").replace("mailto:", "").strip()
+                    naam = card.css("h5.card-title::text").get(default="").strip()
+                    tekst = " ".join(card.xpath(".//p//text()").getall()).strip()
+                    email = (
+                        card.css("a[href^='mailto:']::attr(href)")
+                        .get(default="")
+                        .replace("mailto:", "")
+                        .strip()
+                    )
                     matches = re.findall(
-                        r"(06\d{8})", tekst.replace(
-                            " ", "").replace(
-                            "-", ""))
+                        r"(06\d{8})", tekst.replace(" ", "").replace("-", "")
+                    )
                     telefoon = matches[0] if matches else ""
 
                     if naam and telefoon:
@@ -93,7 +102,7 @@ class ContactenSpider(scrapy.Spider):
                             "telefoon": telefoon,
                             "email": email,
                             "pagina_url": url,
-                            "beschrijving": self.get_beschrijving("beweegmakelaars")
+                            "beschrijving": self.get_beschrijving("beweegmakelaars"),
                         }
 
             elif "volwassenenfonds" in url:
@@ -101,10 +110,15 @@ class ContactenSpider(scrapy.Spider):
                     tekst = " ".join(li.css("*::text").getall()).strip()
                     naam = li.xpath(".//text()[1]").get(default="").strip()
                     functie_match = re.search(
-                        r"(Beweegmakelaar.*?|Kennismetwerk.*?)\,", tekst)
+                        r"(Beweegmakelaar.*?|Kennismetwerk.*?)\,", tekst
+                    )
                     tel_match = re.search(r"(06[\s\d]{8,})", tekst)
-                    email = li.css("a[href^='mailto:']::attr(href)").get(
-                        default="").replace("mailto:", "").strip()
+                    email = (
+                        li.css("a[href^='mailto:']::attr(href)")
+                        .get(default="")
+                        .replace("mailto:", "")
+                        .strip()
+                    )
 
                     if naam and tel_match:
                         yield {
@@ -114,16 +128,23 @@ class ContactenSpider(scrapy.Spider):
                             "telefoon": tel_match.group(1).replace(" ", ""),
                             "email": email,
                             "pagina_url": url,
-                            "beschrijving": self.get_beschrijving("volwassenenfonds")
+                            "beschrijving": self.get_beschrijving("volwassenenfonds"),
                         }
 
             elif "valpreventie" in url:
                 naam = "Sabine"
                 functie = "Valpreventie"
-                telefoon = response.css('a[href^="tel:"]::text').get(
-                    default="").replace(" ", "")
-                email = response.css('a[href^="mailto:"]::attr(href)').get(
-                    default="").replace("mailto:", "").strip()
+                telefoon = (
+                    response.css('a[href^="tel:"]::text')
+                    .get(default="")
+                    .replace(" ", "")
+                )
+                email = (
+                    response.css('a[href^="mailto:"]::attr(href)')
+                    .get(default="")
+                    .replace("mailto:", "")
+                    .strip()
+                )
                 yield {
                     "categorie": "valpreventie",
                     "naam": naam,
@@ -131,14 +152,18 @@ class ContactenSpider(scrapy.Spider):
                     "telefoon": telefoon,
                     "email": email,
                     "pagina_url": url,
-                    "beschrijving": self.get_beschrijving("valpreventie")
+                    "beschrijving": self.get_beschrijving("valpreventie"),
                 }
 
             elif "gouda-goed-bezig-jogg" in url:
                 naam_raw = response.css("h6.card-title::text").get()
                 naam = naam_raw.split("|")[0].strip() if naam_raw else ""
-                email = response.css("a[href^='mailto:']::attr(href)").get(
-                    default="").replace("mailto:", "").strip()
+                email = (
+                    response.css("a[href^='mailto:']::attr(href)")
+                    .get(default="")
+                    .replace("mailto:", "")
+                    .strip()
+                )
                 yield {
                     "categorie": "gezond eten",
                     "naam": naam,
@@ -146,21 +171,23 @@ class ContactenSpider(scrapy.Spider):
                     "telefoon": "",
                     "email": email,
                     "pagina_url": url,
-                    "beschrijving": self.get_beschrijving("gezond eten")
+                    "beschrijving": self.get_beschrijving("gezond eten"),
                 }
 
             elif "kenniscentrum" in url:
-                titel = response.css(
-                    "h5.card-title::text").get(default="").strip()
+                titel = response.css("h5.card-title::text").get(default="").strip()
                 naam, functie = (titel.split("|") + [""])[:2]
                 yield {
                     "categorie": "kenniscentrum",
                     "naam": naam.strip(),
                     "functie": functie.strip(),
-                    "telefoon": response.css("a[href^='tel:']::attr(href)").get(default="").replace("tel:", "").strip(),
+                    "telefoon": response.css("a[href^='tel:']::attr(href)")
+                    .get(default="")
+                    .replace("tel:", "")
+                    .strip(),
                     "email": "",
                     "pagina_url": url,
-                    "beschrijving": self.get_beschrijving("kenniscentrum")
+                    "beschrijving": self.get_beschrijving("kenniscentrum"),
                 }
 
             elif "inclusie" in url:
@@ -169,9 +196,12 @@ class ContactenSpider(scrapy.Spider):
                     "naam": "Kim",
                     "functie": "Coördinator Aangepast Sporten",
                     "telefoon": "",
-                    "email": response.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip(),
+                    "email": response.css("a[href^='mailto:']::attr(href)")
+                    .get(default="")
+                    .replace("mailto:", "")
+                    .strip(),
                     "pagina_url": url,
-                    "beschrijving": self.get_beschrijving("inclusie")
+                    "beschrijving": self.get_beschrijving("inclusie"),
                 }
 
             elif "rotterdampas" in url:
@@ -182,15 +212,18 @@ class ContactenSpider(scrapy.Spider):
                     "telefoon": "",
                     "email": "",
                     "pagina_url": url,
-                    "beschrijving": self.get_beschrijving("rotterdampas")
+                    "beschrijving": self.get_beschrijving("rotterdampas"),
                 }
 
             elif "sociaal-domein" in url:
                 for persoon in response.css("div.card-stretch-hover"):
-                    naam_functie = persoon.css(
-                        "h6::text").get(default="").strip()
-                    email = persoon.css("a[href^='mailto:']::attr(href)").get(
-                        default="").replace("mailto:", "").strip()
+                    naam_functie = persoon.css("h6::text").get(default="").strip()
+                    email = (
+                        persoon.css("a[href^='mailto:']::attr(href)")
+                        .get(default="")
+                        .replace("mailto:", "")
+                        .strip()
+                    )
                     parts = naam_functie.split("|")
                     naam = parts[0].strip()
                     functie = parts[1].strip() if len(parts) > 1 else ""
@@ -201,35 +234,42 @@ class ContactenSpider(scrapy.Spider):
                         "telefoon": "",
                         "email": email,
                         "pagina_url": url,
-                        "beschrijving": self.get_beschrijving("sociaal domein")
+                        "beschrijving": self.get_beschrijving("sociaal domein"),
                     }
 
             elif "tipkaart-zorgverleners" in url:
-                titel = response.css(
-                    "h5.card-title::text").get(default="").strip()
+                titel = response.css("h5.card-title::text").get(default="").strip()
                 naam, functie = (titel.split("|") + [""])[:2]
                 yield {
                     "categorie": "sport-zorgverleners",
                     "naam": naam.strip(),
                     "functie": functie.strip(),
                     "telefoon": "",
-                    "email": response.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip(),
+                    "email": response.css("a[href^='mailto:']::attr(href)")
+                    .get(default="")
+                    .replace("mailto:", "")
+                    .strip(),
                     "pagina_url": url,
-                    "beschrijving": self.get_beschrijving("sport-zorgverleners")
+                    "beschrijving": self.get_beschrijving("sport-zorgverleners"),
                 }
 
             elif "gouds-leefstijlakkoord" in url:
-                titel = response.css(
-                    "h5.card-title::text").get(default="").strip()
+                titel = response.css("h5.card-title::text").get(default="").strip()
                 naam, functie = (titel.split("|") + [""])[:2]
                 yield {
                     "categorie": "gouds leefstijlakkoord",
                     "naam": naam.strip(),
                     "functie": functie.strip(),
-                    "telefoon": response.css("a[href^='tel:']::attr(href)").get(default="").replace("tel:", "").strip(),
-                    "email": response.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip(),
+                    "telefoon": response.css("a[href^='tel:']::attr(href)")
+                    .get(default="")
+                    .replace("tel:", "")
+                    .strip(),
+                    "email": response.css("a[href^='mailto:']::attr(href)")
+                    .get(default="")
+                    .replace("mailto:", "")
+                    .strip(),
                     "pagina_url": url,
-                    "beschrijving": self.get_beschrijving("gouds leefstijlakkoord")
+                    "beschrijving": self.get_beschrijving("gouds leefstijlakkoord"),
                 }
 
         except Exception as e:

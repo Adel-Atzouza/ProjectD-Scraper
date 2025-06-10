@@ -25,9 +25,7 @@ def get_event_links():
 
     while True:
         try:
-            wait.until(
-                EC.presence_of_all_elements_located(
-                    (By.CLASS_NAME, "js-popup")))
+            wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, "js-popup")))
             event_elements = driver.find_elements(By.CLASS_NAME, "js-popup")
 
             for elem in event_elements:
@@ -39,11 +37,12 @@ def get_event_links():
                 print(f"[INFO] Reached max weeks: {MAX_WEEKS}")
                 break
 
-            next_week_btn = wait.until(EC.presence_of_element_located(
-                (By.CSS_SELECTOR, ".calendar-form__date-next.js-date-next")))
-            driver.execute_script(
-                "arguments[0].scrollIntoView(true);",
-                next_week_btn)
+            next_week_btn = wait.until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, ".calendar-form__date-next.js-date-next")
+                )
+            )
+            driver.execute_script("arguments[0].scrollIntoView(true);", next_week_btn)
             time.sleep(0.5)
             driver.execute_script("arguments[0].click();", next_week_btn)
             time.sleep(2)

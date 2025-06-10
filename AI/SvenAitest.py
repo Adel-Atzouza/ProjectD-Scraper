@@ -15,9 +15,7 @@ def get_dynamic_content(url: str) -> str:
         return html
 
 
-def genereer_samenvatting(
-        html: str,
-        uitvoerpad: str = "samenvatting.txt") -> None:
+def genereer_samenvatting(html: str, uitvoerpad: str = "samenvatting.txt") -> None:
     """Haal tekst uit HTML en laat deze samenvatten door een lokaal AI-model."""
     soup = BeautifulSoup(html, "html.parser")
     tekst = soup.get_text(separator="\n", strip=True)
@@ -32,7 +30,8 @@ def genereer_samenvatting(
         "- De namen van alle sportparken\n"
         "- Per sportpark: het adres en de aanwezige sportvoorzieningen (zoals voetbalvelden, handbalvelden, etc.)\n"
         "- Geef ook de contactgegevens van de organisatie (zoals naam contactpersoon, telefoonnummer en e-mailadres)\n"
-        "Voeg geen onnodige informatie toe buiten deze onderdelen. Gebruik alleen de tekst die hieronder volgt:\n\n")
+        "Voeg geen onnodige informatie toe buiten deze onderdelen. Gebruik alleen de tekst die hieronder volgt:\n\n"
+    )
 
     volledige_prompt = prompt + tekst
 

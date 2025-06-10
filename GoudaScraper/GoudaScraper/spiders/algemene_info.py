@@ -16,12 +16,9 @@ class AlgemeneInfoSpider(scrapy.Spider):
         result_dir = project_root / "result"
         result_dir.mkdir(parents=True, exist_ok=True)
 
-        self.output_file = (
-            result_dir /
-            "algemene_info.csv").open(
-            "w",
-            newline="",
-            encoding="utf-8")
+        self.output_file = (result_dir / "algemene_info.csv").open(
+            "w", newline="", encoding="utf-8"
+        )
         self.csv_writer = csv.writer(self.output_file)
         self.csv_writer.writerow(["section", "content"])
 

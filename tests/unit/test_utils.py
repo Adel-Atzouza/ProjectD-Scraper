@@ -1,13 +1,8 @@
 from Crawlscraper import clean_text, extract_title, is_excluded
-import pytest
 import sys
 import os
 
-sys.path.append(
-    os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__),
-            "../../")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 
 def test_is_excluded():

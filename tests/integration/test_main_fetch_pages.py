@@ -9,8 +9,7 @@ def test_main_creates_files():
     if not os.path.exists("files"):
         os.makedirs("files")
 
-    result = subprocess.run(["python", main_script],
-                            capture_output=True, text=True)
+    result = subprocess.run(["python", main_script], capture_output=True, text=True)
     assert result.returncode == 0, f"main.py faalde: {result.stderr}"
 
     files = os.listdir("files")

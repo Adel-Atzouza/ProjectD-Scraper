@@ -11,10 +11,15 @@ class GymzaalSpider(scrapy.Spider):
             "verhuur_locaties.csv": {
                 "format": "csv",
                 "fields": [
-                    "categorie", "locatie", "pagina_url",
-                    "naam_zaal", "adres_en_wijk", "afmetingen", "douches"
+                    "categorie",
+                    "locatie",
+                    "pagina_url",
+                    "naam_zaal",
+                    "adres_en_wijk",
+                    "afmetingen",
+                    "douches",
                 ],
-                "encoding": "utf8"
+                "encoding": "utf8",
             }
         },
         "DOWNLOAD_HANDLERS": {
@@ -32,10 +37,10 @@ class GymzaalSpider(scrapy.Spider):
                 url=url,
                 meta={
                     "playwright": True,
-                    "playwright_page_methods": [PageMethod("wait_for_timeout", 1000)]
+                    "playwright_page_methods": [PageMethod("wait_for_timeout", 1000)],
                 },
                 callback=self.parse_gymzalen,
-                errback=self.errback_log
+                errback=self.errback_log,
             )
 
     def parse_gymzalen(self, response):
@@ -44,20 +49,32 @@ class GymzaalSpider(scrapy.Spider):
             if not cards:
                 self.logger.warning(
                     f"⚠️ Geen gymzalen gevonden op {
-                        response.url}")
+                        response.url}"
+                )
 
             for card in cards:
                 naam = card.css("h5.card-title::text").get(default="").strip()
                 paragrafen = card.css("p::text").getall()
                 adres_en_wijk = paragrafen[0].strip() if paragrafen else ""
-                afmetingen = card.xpath(
-                    ".//strong[contains(text(),'Afmetingen')]/following-sibling::text()[1]").get(default="").strip()
-                douches = card.xpath(
-                    ".//strong[contains(text(),'Douches')]/following-sibling::text()[1]").get(default="").strip()
+                afmetingen = (
+                    card.xpath(
+                        ".//strong[contains(text(),'Afmetingen')]/following-sibling::text()[1]"
+                    )
+                    .get(default="")
+                    .strip()
+                )
+                douches = (
+                    card.xpath(
+                        ".//strong[contains(text(),'Douches')]/following-sibling::text()[1]"
+                    )
+                    .get(default="")
+                    .strip()
+                )
 
                 if not naam:
                     self.logger.warning(
-                        "⚠️ Gymzaal zonder naam gevonden, wordt overgeslagen.")
+                        "⚠️ Gymzaal zonder naam gevonden, wordt overgeslagen."
+                    )
                     continue
 
                 yield {
@@ -67,16 +84,18 @@ class GymzaalSpider(scrapy.Spider):
                     "naam_zaal": naam,
                     "adres_en_wijk": adres_en_wijk,
                     "afmetingen": afmetingen,
-                    "douches": douches
+                    "douches": douches,
                 }
         except Exception as e:
             self.logger.error(
                 f"❌ Fout tijdens verwerken van gymzalen op {
-                    response.url}: {e}")
+                    response.url}: {e}"
+            )
 
     def errback_log(self, failure):
         self.logger.error(
-            f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
+            f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}"
+        )
 
 
 # import scrapy

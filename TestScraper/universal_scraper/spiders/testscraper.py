@@ -1,7 +1,6 @@
 import scrapy
 from urllib.parse import urlparse
 import csv
-import os
 import hashlib
 import re
 
@@ -186,8 +185,7 @@ class UniversalSpider(scrapy.Spider):
             for pattern in irrelevant_patterns:
                 raw_text = raw_text.replace(pattern, "")
             raw_text = re.sub(r"\[\#.*?\#\]", "", raw_text)
-            raw_text = re.sub(
-                r"var\s+[A-Z_]+\s*=\s*['\"].*?['\"];", "", raw_text)
+            raw_text = re.sub(r"var\s+[A-Z_]+\s*=\s*['\"].*?['\"];", "", raw_text)
             raw_text = re.sub(
                 r"Cookieverklaring.*?Dataduiker", "", raw_text, flags=re.DOTALL
             )
@@ -215,8 +213,7 @@ class UniversalSpider(scrapy.Spider):
 
     def is_internal(self, url):
         domain = urlparse(url).netloc
-        return any(domain.endswith(allowed)
-                   for allowed in self.allowed_domains)
+        return any(domain.endswith(allowed) for allowed in self.allowed_domains)
 
     def closed(self, reason):
         output_file = "output.csv"

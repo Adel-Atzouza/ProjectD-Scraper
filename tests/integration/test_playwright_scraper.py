@@ -9,8 +9,7 @@ def test_playwright_scraper_creates_output():
     if not os.path.exists("files"):
         os.makedirs("files")
 
-    result = subprocess.run(["python", script_path],
-                            capture_output=True, text=True)
+    result = subprocess.run(["python", script_path], capture_output=True, text=True)
     assert result.returncode == 0, f"Playwright script faalde: {result.stderr}"
 
     files = os.listdir("files")

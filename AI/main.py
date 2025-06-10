@@ -1,10 +1,7 @@
-import os
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from bs4 import BeautifulSoup
 import pprint
-
-import ai
 
 
 def fetch_and_parse(url: str) -> str:
@@ -21,14 +18,12 @@ def get_page(url: str) -> None:
     root = requests.get(url).content
     soup = BeautifulSoup(root, "html.parser")
 
-    links = ["https://goudawijzer.nl" + x["href"]
-             for x in soup.find_all("a", href=True)]
+    links = [
+        "https://goudawijzer.nl" + x["href"] for x in soup.find_all("a", href=True)
+    ]
 
     with ThreadPoolExecutor(max_workers=10) as executor:
-        future_to_url = {
-            executor.submit(
-                fetch_and_parse,
-                link): link for link in links}
+        future_to_url = {executor.submit(fetch_and_parse, link): link for link in links}
         results = []
         for future in as_completed(future_to_url):
             text = future.result()
@@ -42,6 +37,4 @@ def get_page(url: str) -> None:
 
 
 if __name__ == "__main__":
-    root = get_page(
-        "https://www.goudawijzer.nl/is/een-vraag-over/wonen-en-huishouden/"
-    )
+    root = get_page("https://www.goudawijzer.nl/is/een-vraag-over/wonen-en-huishouden/")
