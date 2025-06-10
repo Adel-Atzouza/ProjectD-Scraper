@@ -35,7 +35,7 @@ jobs:
         run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
 
       - name: Run Flake8
-        run: flake8 . --max-line-length=120 --exclude=venv,__pycache__ --ignore=E501,W503,W504,E203,E402,F401
+        run: flake8 . --max-line-length=120 --exclude=venv,__pycache__ --ignore=E501,W503,W504,E203,E402
 
       - name: Format check
         run: autopep8 --diff --recursive . | tee check.diff
@@ -43,3 +43,25 @@ jobs:
       - name: Run Tests
         run: pytest tests/ --disable-warnings
 
+  notify:
+    name: Notify Discord
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: always()
+
+    steps:
+      - name: Notify Discord on success
+        if: ${{ success() }}
+        uses: appleboy/discord-action@master
+        with:
+          webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
+          webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+          message: "✅ CI/CD pipeline geslaagd voor ${{ github.repository }}!"
+
+      - name: Notify Discord on failure
+        if: ${{ failure() }}
+        uses: appleboy/discord-action@master
+        with:
+          webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
+          webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+          message: "❌ CI/CD pipeline gefaald voor ${{ github.repository }}! Check de logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
