@@ -1,7 +1,7 @@
 import pytest
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
-from  Crawlscraper import is_excluded, clean_markdown_from_soup, collect_internal_urls
+from  Crawlscraper import is_excluded, clean_text, collect_internal_urls
 
 # Test voor URL-exclusie op basis van extensies
 def test_is_excluded():
@@ -11,21 +11,37 @@ def test_is_excluded():
     assert is_excluded("https://example.com/page.html") is False
 
 # Test voor clean_markdown_from_soup met cookie-teksten en korte teksten
-def test_clean_markdown_from_soup_filters_correct():
-    html = """
-    <html>
-        <body>
-            <p>Accepteer cookies alstublieft.</p>
-            <h1>Korte</h1>
-            <p>Dit is een relevante tekst over een activiteit in Gouda die voldoende lang is.</p>
-        </body>
-    </html>
+def test_clean_text():
+    # Test input met markdown elementen die gefilterd moeten worden
+    markdown = """
+    | Header | Another Header |
+    |--------|----------------|
+    | Row 1  | Data 1         |
+    
+    [link text](http://example.com)
+    
+    # Heading 1
+    
+    ## Heading 2
+    
+    Accepteer cookies alstublieft.
+    
+    Korte tekst.
+    
+    Dit is een relevante tekst over een activiteit in Gouda. 
+    Het heeft meerdere zinnen. Tweede zin. Derde. Vierde. Vijfde. Zesde.
     """
-    soup = BeautifulSoup(html, "html.parser")
-    result = clean_markdown_from_soup(soup)
-    assert "cookies" not in result.lower()
-    assert "Korte" not in result
-    assert "relevante tekst" in result
+    
+    cleaned = clean_text(markdown)
+    
+    # Assertions
+    assert "|" not in cleaned  # Tabellen moeten verwijderd zijn
+    assert "[link text]" not in cleaned  # Markdown links moeten verwijderd zijn
+    assert "#" not in cleaned  # Markdown headers moeten verwijderd zijn
+    assert "cookies" not in cleaned.lower()  # Cookie-teksten moeten verwijderd zijn
+    assert "Korte" not in cleaned  # Korte teksten moeten verwijderd zijn
+    assert "relevante tekst" in cleaned  # Relevante content moet blijven
+    assert len(cleaned.split(". ")) <= 5  # Max 5 zinnen behouden
 
 # Test voor domeincontrole en normalisatie
 @pytest.mark.asyncio
