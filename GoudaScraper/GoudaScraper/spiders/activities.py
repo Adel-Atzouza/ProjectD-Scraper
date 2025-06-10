@@ -3,6 +3,7 @@ import csv
 from pathlib import Path
 from GoudaScraper.items import ActivityItem
 
+
 class ActivitiesSpider(scrapy.Spider):
     name = "activities"
     allowed_domains = ["sociaalteamgouda.nl"]
@@ -15,7 +16,12 @@ class ActivitiesSpider(scrapy.Spider):
         result_dir = project_root / "result"
         result_dir.mkdir(parents=True, exist_ok=True)
 
-        self.output_file = (result_dir / "activities.csv").open("w", newline="", encoding="utf-8")
+        self.output_file = (
+            result_dir /
+            "activities.csv").open(
+            "w",
+            newline="",
+            encoding="utf-8")
         self.csv_writer = csv.writer(self.output_file)
         self.csv_writer.writerow([
             "title", "date", "time", "location", "description",
@@ -31,7 +37,8 @@ class ActivitiesSpider(scrapy.Spider):
             url = card.css("::attr(href)").get()
             title = card.css("h3.b-card__title::text").get(default="").strip()
             date = card.css("span.start-date::text").get(default="").strip()
-            time = card.css("span.start-date-time::text").get(default="").strip()
+            time = card.css(
+                "span.start-date-time::text").get(default="").strip()
             time = " ".join(time.split())
             location = card.css("span.text::text").get(default="").strip()
 
@@ -63,11 +70,14 @@ class ActivitiesSpider(scrapy.Spider):
                 paragraphs.append(text)
 
         description = " ".join(paragraphs).strip()
-        
+
         # Contact details
-        contact_name = response.css(".b-person__name::text").get(default="").strip()
-        contact_email = response.css('a[href^="mailto:"]::text').get(default="").strip()
-        contact_phone = response.css('a[href^="tel:"]::text').get(default="").strip()
+        contact_name = response.css(
+            ".b-person__name::text").get(default="").strip()
+        contact_email = response.css(
+            'a[href^="mailto:"]::text').get(default="").strip()
+        contact_phone = response.css(
+            'a[href^="tel:"]::text').get(default="").strip()
 
         self.csv_writer.writerow([
             title, date, time, location, description,

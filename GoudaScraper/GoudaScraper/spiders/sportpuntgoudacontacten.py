@@ -2,6 +2,7 @@ import scrapy
 from scrapy_playwright.page import PageMethod
 import re
 
+
 class ContactenSpider(scrapy.Spider):
     name = "sportpuntondersteuning_contacten_spider"
     start_urls = [
@@ -21,13 +22,18 @@ class ContactenSpider(scrapy.Spider):
         "FEEDS": {
             "SportpuntGoudaContacten.csv": {
                 "format": "csv",
-                "fields": ["categorie", "naam", "functie", "telefoon", "email", "pagina_url", "beschrijving"],
-                "encoding": "utf8"
-            }
-        },
+                "fields": [
+                    "categorie",
+                    "naam",
+                    "functie",
+                    "telefoon",
+                    "email",
+                    "pagina_url",
+                    "beschrijving"],
+                "encoding": "utf8"}},
         "DOWNLOAD_HANDLERS": {
             "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
-            "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+                    "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
         },
         "TWISTED_REACTOR": "twisted.internet.asyncioreactor.AsyncioSelectorReactor",
         "PLAYWRIGHT_BROWSER_TYPE": "chromium",
@@ -45,8 +51,7 @@ class ContactenSpider(scrapy.Spider):
             "valpreventie": "Contact voor deelname of samenwerking rondom valpreventieprogramma’s voor ouderen.",
             "gezond eten": "Regisseur van het programma 'Gouda Goed Bezig' met focus op gezonde leefstijl (JOGG).",
             "kenniscentrum": "Strategisch aanspreekpunt voor kennisdeling en datagebruik binnen SPORT•GOUDA.",
-            "gouds leefstijlakkoord": "Aanspreekpunt voor vragen over het Gouds Leefstijlakkoord en gezondheidsbeleid."
-        }
+            "gouds leefstijlakkoord": "Aanspreekpunt voor vragen over het Gouds Leefstijlakkoord en gezondheidsbeleid."}
         return beschrijvingen.get(categorie, "")
 
     def start_requests(self):
@@ -59,7 +64,8 @@ class ContactenSpider(scrapy.Spider):
             )
 
     def errback_log(self, failure):
-        self.logger.error(f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
+        self.logger.error(
+            f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
 
     def parse(self, response):
         url = response.url
@@ -67,10 +73,16 @@ class ContactenSpider(scrapy.Spider):
         try:
             if "beweegmakelaars" in url:
                 for card in response.css(".card-stretch-hover"):
-                    naam = card.css("h5.card-title::text").get(default="").strip()
-                    tekst = " ".join(card.xpath(".//p//text()").getall()).strip()
-                    email = card.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
-                    matches = re.findall(r"(06\d{8})", tekst.replace(" ", "").replace("-", ""))
+                    naam = card.css(
+                        "h5.card-title::text").get(default="").strip()
+                    tekst = " ".join(
+                        card.xpath(".//p//text()").getall()).strip()
+                    email = card.css("a[href^='mailto:']::attr(href)").get(
+                        default="").replace("mailto:", "").strip()
+                    matches = re.findall(
+                        r"(06\d{8})", tekst.replace(
+                            " ", "").replace(
+                            "-", ""))
                     telefoon = matches[0] if matches else ""
 
                     if naam and telefoon:
@@ -88,9 +100,11 @@ class ContactenSpider(scrapy.Spider):
                 for li in response.css("ul > li"):
                     tekst = " ".join(li.css("*::text").getall()).strip()
                     naam = li.xpath(".//text()[1]").get(default="").strip()
-                    functie_match = re.search(r"(Beweegmakelaar.*?|Kennismetwerk.*?)\,", tekst)
+                    functie_match = re.search(
+                        r"(Beweegmakelaar.*?|Kennismetwerk.*?)\,", tekst)
                     tel_match = re.search(r"(06[\s\d]{8,})", tekst)
-                    email = li.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
+                    email = li.css("a[href^='mailto:']::attr(href)").get(
+                        default="").replace("mailto:", "").strip()
 
                     if naam and tel_match:
                         yield {
@@ -106,8 +120,10 @@ class ContactenSpider(scrapy.Spider):
             elif "valpreventie" in url:
                 naam = "Sabine"
                 functie = "Valpreventie"
-                telefoon = response.css('a[href^="tel:"]::text').get(default="").replace(" ", "")
-                email = response.css('a[href^="mailto:"]::attr(href)').get(default="").replace("mailto:", "").strip()
+                telefoon = response.css('a[href^="tel:"]::text').get(
+                    default="").replace(" ", "")
+                email = response.css('a[href^="mailto:"]::attr(href)').get(
+                    default="").replace("mailto:", "").strip()
                 yield {
                     "categorie": "valpreventie",
                     "naam": naam,
@@ -121,7 +137,8 @@ class ContactenSpider(scrapy.Spider):
             elif "gouda-goed-bezig-jogg" in url:
                 naam_raw = response.css("h6.card-title::text").get()
                 naam = naam_raw.split("|")[0].strip() if naam_raw else ""
-                email = response.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
+                email = response.css("a[href^='mailto:']::attr(href)").get(
+                    default="").replace("mailto:", "").strip()
                 yield {
                     "categorie": "gezond eten",
                     "naam": naam,
@@ -133,7 +150,8 @@ class ContactenSpider(scrapy.Spider):
                 }
 
             elif "kenniscentrum" in url:
-                titel = response.css("h5.card-title::text").get(default="").strip()
+                titel = response.css(
+                    "h5.card-title::text").get(default="").strip()
                 naam, functie = (titel.split("|") + [""])[:2]
                 yield {
                     "categorie": "kenniscentrum",
@@ -169,8 +187,10 @@ class ContactenSpider(scrapy.Spider):
 
             elif "sociaal-domein" in url:
                 for persoon in response.css("div.card-stretch-hover"):
-                    naam_functie = persoon.css("h6::text").get(default="").strip()
-                    email = persoon.css("a[href^='mailto:']::attr(href)").get(default="").replace("mailto:", "").strip()
+                    naam_functie = persoon.css(
+                        "h6::text").get(default="").strip()
+                    email = persoon.css("a[href^='mailto:']::attr(href)").get(
+                        default="").replace("mailto:", "").strip()
                     parts = naam_functie.split("|")
                     naam = parts[0].strip()
                     functie = parts[1].strip() if len(parts) > 1 else ""
@@ -185,7 +205,8 @@ class ContactenSpider(scrapy.Spider):
                     }
 
             elif "tipkaart-zorgverleners" in url:
-                titel = response.css("h5.card-title::text").get(default="").strip()
+                titel = response.css(
+                    "h5.card-title::text").get(default="").strip()
                 naam, functie = (titel.split("|") + [""])[:2]
                 yield {
                     "categorie": "sport-zorgverleners",
@@ -198,7 +219,8 @@ class ContactenSpider(scrapy.Spider):
                 }
 
             elif "gouds-leefstijlakkoord" in url:
-                titel = response.css("h5.card-title::text").get(default="").strip()
+                titel = response.css(
+                    "h5.card-title::text").get(default="").strip()
                 naam, functie = (titel.split("|") + [""])[:2]
                 yield {
                     "categorie": "gouds leefstijlakkoord",
@@ -212,7 +234,6 @@ class ContactenSpider(scrapy.Spider):
 
         except Exception as e:
             self.logger.error(f"❌ Fout bij het verwerken van {url}: {e}")
-
 
 
 # import scrapy

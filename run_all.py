@@ -31,6 +31,7 @@ for project_folder, _ in SPIDERS:
     if full_path not in sys.path:
         sys.path.insert(0, full_path)
 
+
 def run_spider(project_folder, spider_name, index=None, total=None):
     label = f"({index}/{total})" if index and total else ""
     print(f"\n🕷️ Running {spider_name} {label}...")
@@ -44,12 +45,14 @@ def run_spider(project_folder, spider_name, index=None, total=None):
     duration = time.time() - start
     print(f"✅ Finished {spider_name} in {duration:.2f}s")
 
+
 def show_menu():
     print("\n📋 Select an option:")
     print("0. Run all spiders")
     for idx, (_, spider_name) in enumerate(SPIDERS, 1):
         print(f"{idx}. Run spider: {spider_name}")
     print("q. Quit")
+
 
 def main():
     while True:
@@ -72,6 +75,7 @@ def main():
                 print("⚠️ Invalid spider number.")
         else:
             print("⚠️ Invalid input. Try again.")
+
 
 if __name__ == "__main__":
     main()

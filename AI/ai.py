@@ -11,7 +11,6 @@ def parse(content: str) -> str:
         "4. **Alleen Gevraagde Gegevens:** Je output mag uitsluitend de expliciet gevraagde gegevens bevatten, zonder andere tekst."
     )
 
-
     args = [
         "ollama",
         "run",

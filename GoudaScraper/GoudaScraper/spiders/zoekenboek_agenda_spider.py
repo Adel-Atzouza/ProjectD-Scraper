@@ -2,6 +2,7 @@ import scrapy
 from GoudaScraper.items import KwadraadItem
 from fetcher import EVENT_LINKS
 
+
 class KwadraadAgendaSpider(scrapy.Spider):
     name = "kwadraad_agenda"
     allowed_domains = ["zoekenboekgouda.kwadraad.nl"]
@@ -22,7 +23,12 @@ class KwadraadAgendaSpider(scrapy.Spider):
 
     def parse_event_details(self, response):
         def clean(selector):
-            return selector.get(default="").strip().replace("\n", " ").replace("\r", "").strip()
+            return selector.get(
+                default="").strip().replace(
+                "\n",
+                " ").replace(
+                "\r",
+                "").strip()
 
         contact_blocks = response.css(".calendar-popup__contact-text > div")
 

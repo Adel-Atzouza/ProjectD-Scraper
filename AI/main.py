@@ -6,6 +6,7 @@ import pprint
 
 import ai
 
+
 def fetch_and_parse(url: str) -> str:
     try:
         response = requests.get(url, timeout=10)
@@ -15,14 +16,19 @@ def fetch_and_parse(url: str) -> str:
     except Exception as e:
         return f"Error fetching {url}: {e}"
 
+
 def get_page(url: str) -> None:
     root = requests.get(url).content
     soup = BeautifulSoup(root, "html.parser")
 
-    links = ["https://goudawijzer.nl" + x["href"] for x in soup.find_all("a", href=True)]
+    links = ["https://goudawijzer.nl" + x["href"]
+             for x in soup.find_all("a", href=True)]
 
     with ThreadPoolExecutor(max_workers=10) as executor:
-        future_to_url = {executor.submit(fetch_and_parse, link): link for link in links}
+        future_to_url = {
+            executor.submit(
+                fetch_and_parse,
+                link): link for link in links}
         results = []
         for future in as_completed(future_to_url):
             text = future.result()

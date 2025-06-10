@@ -1,6 +1,7 @@
 import scrapy
 from scrapy_playwright.page import PageMethod
 
+
 class ZebraZalenSpider(scrapy.Spider):
     name = "zebra_zalen"
     start_urls = ["https://www.sportpuntgouda.nl/sporthal-de-zebra"]
@@ -55,4 +56,5 @@ class ZebraZalenSpider(scrapy.Spider):
             self.logger.error(f"❌ Fout bij parseren van {pagina_url}: {e}")
 
     def errback_log(self, failure):
-        self.logger.error(f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
+        self.logger.error(
+            f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")

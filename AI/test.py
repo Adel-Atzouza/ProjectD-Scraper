@@ -1,4 +1,5 @@
-import asyncio, os
+import asyncio
+import os
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
@@ -8,6 +9,7 @@ MAX_CONCURRENT_TASKS = 5
 visited = set()
 semaphore = asyncio.Semaphore(MAX_CONCURRENT_TASKS)
 
+
 def is_valid_subpath_link(base_url, target_url):
     base_parts = urlparse(base_url)
     target_parts = urlparse(target_url)
@@ -15,6 +17,7 @@ def is_valid_subpath_link(base_url, target_url):
         base_parts.netloc == target_parts.netloc and
         target_parts.path.startswith(base_parts.path)
     )
+
 
 async def scrape_page(context, url, base_url, to_visit):
     async with semaphore:
@@ -36,9 +39,9 @@ async def scrape_page(context, url, base_url, to_visit):
         # Scrape the page content
         if not os.path.exists('files'):
             os.makedirs('files')
-        
+
         filename = urlparse(url).path.replace('/', '_') + '.txt'
-        
+
         paragraphs = soup.find_all('p')
         lines = []
         for p in paragraphs:
@@ -55,7 +58,7 @@ async def scrape_page(context, url, base_url, to_visit):
         text = '\n'.join(lines)
         with open(f'files/{filename}', 'w', encoding='utf-8') as f:
             f.write(text)
-    
+
         # Find all links on the page
 
         for link in soup.find_all('a', href=True):
@@ -63,6 +66,7 @@ async def scrape_page(context, url, base_url, to_visit):
             href = href.split('#')[0]
             if is_valid_subpath_link(base_url, href) and href not in visited:
                 to_visit.put_nowait(href)
+
 
 async def main(base_url):
     to_visit = asyncio.Queue()
@@ -76,7 +80,12 @@ async def main(base_url):
         while not to_visit.empty() or tasks:
             while not to_visit.empty():
                 next_url = await to_visit.get()
-                task = asyncio.create_task(scrape_page(context, next_url, base_url, to_visit))
+                task = asyncio.create_task(
+                    scrape_page(
+                        context,
+                        next_url,
+                        base_url,
+                        to_visit))
                 tasks.append(task)
 
             # wait for some tasks to complete
@@ -92,6 +101,3 @@ async def main(base_url):
 if __name__ == "__main__":
     start_url = "https://www.goudawijzer.nl/is/een-vraag-over"
     asyncio.run(main(start_url))
-
-
-
