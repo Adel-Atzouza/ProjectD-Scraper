@@ -8,7 +8,6 @@ import json
 import asyncio
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
-from tqdm import tqdm
 from typing import List, Set
 from datetime import datetime
 from collections import defaultdict
@@ -34,7 +33,7 @@ def clean_markdown_from_soup(soup):
             lines.append(text)
     return "\n\n".join(lines)
 
-async def collect_internal_urls(crawler, start_url: str, batch_size=15) -> Set[str]:
+async def collect_internal_urls(crawler, start_url: str, batch_size: int, progress_file: str) -> Set[str]:
     to_visit = set([start_url])
     visited = set()
     discovered = set()
@@ -47,13 +46,32 @@ async def collect_internal_urls(crawler, start_url: str, batch_size=15) -> Set[s
         to_visit.difference_update(current_batch)
         visited.update(current_batch)
 
-        print(f"\n [Batch] {len(discovered) + 1} URLs...")
+        print(f"\n [Batch] {len(visited)} visited, {len(to_visit)} to visit...")
+
+        # Write discovery phase progress
+        visited_count = len(visited)
+        to_visit_count = len(to_visit)
+        total_estimated = visited_count + to_visit_count
+
+        if total_estimated == 0:
+            percent_estimated = 0
+        else:
+            percent_estimated = int((visited_count / total_estimated) * 100)
+
+        percent_estimated = min(percent_estimated, 99)  # discovery max 99%
+
+        with open(progress_file, "w") as f:
+            json.dump({"progress": percent_estimated, "status": "discovering"}, f)
+            f.flush()
+            os.fsync(f.fileno())
+
+        # Actual crawling
         tasks = [crawler.arun(url, crawl_config, session_id=session_id) for url in current_batch]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         for url, res in zip(current_batch, results):
             if isinstance(res, Exception):
-                print(f" {url}: {res}")
+                print(f"❌ {url}: {res}")
                 continue
             if res.success and res.html:
                 soup = BeautifulSoup(res.html, "html.parser")
@@ -66,6 +84,11 @@ async def collect_internal_urls(crawler, start_url: str, batch_size=15) -> Set[s
                         if not is_excluded(norm) and norm not in visited and norm not in to_visit:
                             to_visit.add(norm)
                             discovered.add(norm)
+
+    # Final discovery progress → 99% complete
+    with open(progress_file, "w") as f:
+        json.dump({"progress": 99, "status": "discovery done"}, f)
+
     return discovered
 
 async def crawl_parallel(urls, max_concurrent, progress_file):
@@ -81,9 +104,8 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
     done_count = 0
     total_urls = len(urls)
 
-
     with open(progress_file, "w") as f:
-        json.dump({"progress": 0, "status": "running"}, f)
+        json.dump({"progress": 99, "status": "crawling"}, f)
 
     async with AsyncWebCrawler(config=browser_config) as crawler:
         for i in range(0, len(urls), max_concurrent):
@@ -93,15 +115,15 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
 
             for url, res in zip(batch, results_batch):
                 done_count += 1
-                percent_done = int((done_count / total_urls) * 100)
+                percent_done = int(99 + (done_count / total_urls) * (100 - 99))  # smooth transition 99 → 100
 
                 with open(progress_file, "w") as f:
-                    json.dump({"progress": percent_done, "status": "running" if percent_done < 100 else "done"}, f)
+                    json.dump({"progress": percent_done, "status": "crawling"}, f)
                     f.flush()
                     os.fsync(f.fileno())
 
                 if isinstance(res, Exception):
-                    print(f"{url}: {res}")
+                    print(f"❌ {url}: {res}")
                     continue
                 elif res.success:
                     soup = BeautifulSoup(res.html, "html.parser")
@@ -110,42 +132,40 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
                     result = {"url": url, "titel": titel, "samenvatting": summary}
                     netloc = urlparse(url).netloc
                     domain_results[netloc].append(result)
-                    print(f"{url} ({percent_done}%) saved to {netloc}")
-
+                    print(f"✅ {url} ({percent_done}%) saved to {netloc}")
 
     with open(progress_file, "w") as f:
         json.dump({"progress": 100, "status": "done"}, f)
 
     print(f"\n🎉 Done. Data saved in: {output_dir}")
 
-async def run_one_url(url: str, job_id: str):
-    progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
-
+async def run_one_url(url: str, progress_file: str):
     browser_config = BrowserConfig(headless=True)
     crawler = AsyncWebCrawler(config=browser_config)
     await crawler.start()
     try:
         print(f"\n🌐 Crawling site: {url}")
-        found_urls = await collect_internal_urls(crawler, url, batch_size=MAX_CONCURRENT)
+        found_urls = await collect_internal_urls(crawler, url, batch_size=MAX_CONCURRENT, progress_file=progress_file)
         print(f"🔗 {len(found_urls)} links found for {url}")
         await crawl_parallel(list(found_urls), MAX_CONCURRENT, progress_file)
     finally:
         await crawler.close()
-
 
 def update_progress(job_id, percent, status="running"):
     progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
     with open(progress_file, "w") as f:
         json.dump({"progress": percent, "status": status}, f)
 
-# CLI entrypoint
 if __name__ == "__main__":
     if len(sys.argv) > 2:
         url = sys.argv[1]
         job_id = sys.argv[2]
+        progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
+
+        update_progress(job_id, 0, "starting")
+
         try:
-            asyncio.run(run_one_url(url, job_id))
+            asyncio.run(run_one_url(url, progress_file))
+            update_progress(job_id, 100, "done")
         except Exception as e:
             update_progress(job_id, 100, f"error: {str(e)}")
-    else:
-        print("❌ Please provide URL and job_id")
