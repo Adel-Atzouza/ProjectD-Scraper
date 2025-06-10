@@ -1,18 +1,21 @@
-from crawl4ai.content_filter_strategy import PruningContentFilter
-from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
-from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
-from collections import defaultdict
-from datetime import datetime
-from typing import List, Set
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin, urlparse
-import asyncio
-import json
 import os
 import re
-import sys
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+import json
+import asyncio
+from urllib.parse import urljoin, urlparse
+from bs4 import BeautifulSoup
+from typing import List, Set
+from datetime import datetime
+from collections import defaultdict
+from crawl4ai import (
+    AsyncWebCrawler,
+    BrowserConfig,
+    CrawlerRunConfig,
+    CacheMode,
+    CrawlResult,
+)
+from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
+from crawl4ai.content_filter_strategy import PruningContentFilter
 
 START_URLS = ["https://www.sportpuntgouda.nl/"]
 MAX_CONCURRENT = 15  # aantal paralell request
@@ -28,16 +31,13 @@ EXCLUDE_EXTENSIONS = [
     ".rar",
 ]
 
+
 # filter voor urls
-
-
 def is_excluded(url: str) -> bool:
     return any(url.lower().endswith(ext) for ext in EXCLUDE_EXTENSIONS)
 
 
 # haal de relavante tekstblokken uit de html en haal cookies eruit
-
-
 def clean_text(markdown: str) -> str:
     markdown = re.sub(r"(?m)^.*\|.*\|.*$", "", markdown)
     markdown = re.sub(r"\[(.*?)\]\([^)]+\)", r"\1", markdown)
@@ -57,11 +57,7 @@ def extract_title(md: str) -> str:
     return "Onbekend"
 
 
-# site crawlen beginnend bij de start url en verzamelt zo alle links in
-# batches van 5, maar kan ook 10 of 15. ligt aan het syteem waaropt tie
-# runt
-
-
+# site crawlen beginnend bij de start url en verzamelt zo alle links in batches van 5, maar kan ook 10 of 15. ligt aan het syteem waaropt tie runt
 async def collect_internal_urls(crawler, start_url: str, batch_size=15) -> Set[str]:
     to_visit = set([start_url])
     visited = set()
@@ -71,28 +67,27 @@ async def collect_internal_urls(crawler, start_url: str, batch_size=15) -> Set[s
     crawl_config = CrawlerRunConfig(
         cache_mode=CacheMode.BYPASS, markdown_generator=DefaultMarkdownGenerator()
     )
-    # unieke sessie-naam per domein
-    session_id = f"discovery_{urlparse(start_url).netloc}"
+    session_id = (
+        f"discovery_{urlparse(start_url).netloc}"  # unieke sessie-naam per domein
+    )
 
     # loop tot dat er geen urls meer te bezoeken zijn
     while to_visit:
         current_batch = list(to_visit)[:batch_size]  # Pakt een batch
-        # haalt de batch uit de lijst
-        to_visit.difference_update(current_batch)
+        to_visit.difference_update(current_batch)  # haalt de batch uit de lijst
         visited.update(current_batch)
 
         print(
-            f"\n [Batch discovery] {
-                len(discovered) +
-                1} URLs"
+            f"\n [Batch discovery] {len(discovered) + 1} URLs"
         )  # voortgang batch crawling
         # start crawl-taken voor de batch
         tasks = [
             crawler.arun(url, crawl_config, session_id=session_id)
             for url in current_batch
         ]
-        # voert alle taken tegelijk uit en vangt fouten op
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        results = await asyncio.gather(
+            *tasks, return_exceptions=True
+        )  # voert alle taken tegelijk uit en vangt fouten op
 
         # verwerk resultaten van deze batch
         for url, res in zip(
@@ -106,17 +101,16 @@ async def collect_internal_urls(crawler, start_url: str, batch_size=15) -> Set[s
                 # vind alle interne links op pagina
                 for tag in soup.find_all("a", href=True):
                     href = tag["href"]
-                    # maakt er een absulute url van. bijv /contact wordt
-                    # https//..../contact
-                    full = urljoin(url, href)
+                    full = urljoin(
+                        url, href
+                    )  # maakt er een absulute url van. bijv /contact wordt https//..../contact
                     parsed = urlparse(full)
 
-                    # chekc of url binnen het zelfde domein zit en voeg toe aan
-                    # to_visit
+                    # chekc of url binnen het zelfde domein zit en voeg toe aan to_visit
                     if parsed.netloc == urlparse(start_url).netloc:
-                        # verwijdert onnodige dingen zoals query strings of
-                        # anchors
-                        norm = parsed.scheme + "://" + parsed.netloc + parsed.path
+                        norm = (
+                            parsed.scheme + "://" + parsed.netloc + parsed.path
+                        )  # verwijdert onnodige dingen zoals query strings of anchors
                         if (
                             not is_excluded(norm)
                             and norm not in visited
@@ -151,19 +145,14 @@ async def crawl_parallel(urls: List[str], max_concurrent: int):
 
     async with AsyncWebCrawler(config=browser_config) as crawler:
         for i in range(0, len(urls), max_concurrent):
-            batch = urls[i : i + max_concurrent]
+            batch = urls[i : i + max_concurrent]  # Maak batch van de lijst urls(5/10)
             tasks = [
-                crawler.arun(
-                    url,
-                    crawl_config,
-                    session_id=f"batch_{
-                        i +
-                        j}",
-                )
+                crawler.arun(url, crawl_config, session_id=f"batch_{i + j}")
                 for j, url in enumerate(batch)
             ]  # per url in de batch een taak
-            # runt tegelijk
-            results_batch = await asyncio.gather(*tasks, return_exceptions=True)
+            results_batch = await asyncio.gather(
+                *tasks, return_exceptions=True
+            )  # runt tegelijk
 
             for url, res in zip(batch, results_batch):
                 if isinstance(res, Exception):
@@ -211,3 +200,7 @@ async def main():
 
     finally:
         await crawler.close()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
