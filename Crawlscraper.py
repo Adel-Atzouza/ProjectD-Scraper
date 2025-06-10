@@ -151,7 +151,7 @@ async def crawl_parallel(urls: List[str], max_concurrent: int):
 
     async with AsyncWebCrawler(config=browser_config) as crawler:
         for i in range(0, len(urls), max_concurrent):
-            batch = urls[i:i + max_concurrent]
+            batch = urls[i : i + max_concurrent]
             tasks = [
                 crawler.arun(
                     url,
