@@ -7,10 +7,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from typing import List
 from pydantic import BaseModel
-# In-memory "DB" of websites → could also use SQLite/Redis
+
 DB_FILE = "websites.json"
 PROGRESS_FOLDER = "progress"
-SCRAPER_SCRIPT = "CrawlscraperA.py"  # Your existing crawler file!
+SCRAPER_SCRIPT = "CrawlscraperA.py" 
 
 os.makedirs(PROGRESS_FOLDER, exist_ok=True)
 
@@ -21,7 +21,7 @@ class Website(BaseModel):
 class WebsiteCreate(BaseModel):
     url: str
 
-# Load existing websites on startup
+
 try:
     with open("websites.json", "r", encoding="utf-8") as f:
         websites_list = json.load(f)
@@ -29,7 +29,7 @@ except FileNotFoundError:
     websites_list = []
 
 
-# FastAPI app
+
 app = FastAPI()
 
 if os.path.exists(DB_FILE):
@@ -38,7 +38,7 @@ if os.path.exists(DB_FILE):
 else:
     db_websites = []
 
-# CORS (Allow from anywhere for testing)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -47,12 +47,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-### Utility functions
+
 def save_db():
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(db_websites, f, indent=2, ensure_ascii=False)
 
-### API Endpoints
+
 
 @app.get("/websites", response_model=List[Website])
 def get_websites():

@@ -81,7 +81,7 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
     done_count = 0
     total_urls = len(urls)
 
-    # Initial progress write
+
     with open(progress_file, "w") as f:
         json.dump({"progress": 0, "status": "running"}, f)
 
@@ -99,9 +99,9 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
                     json.dump({"progress": percent_done, "status": "running" if percent_done < 100 else "done"}, f)
                     f.flush()
                     os.fsync(f.fileno())
-                    
+
                 if isinstance(res, Exception):
-                    print(f"❌ {url}: {res}")
+                    print(f"{url}: {res}")
                     continue
                 elif res.success:
                     soup = BeautifulSoup(res.html, "html.parser")
@@ -110,9 +110,9 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
                     result = {"url": url, "titel": titel, "samenvatting": summary}
                     netloc = urlparse(url).netloc
                     domain_results[netloc].append(result)
-                    print(f"✅ {url} ({percent_done}%) saved to {netloc}")
+                    print(f"{url} ({percent_done}%) saved to {netloc}")
 
-    # Final write
+
     with open(progress_file, "w") as f:
         json.dump({"progress": 100, "status": "done"}, f)
 
