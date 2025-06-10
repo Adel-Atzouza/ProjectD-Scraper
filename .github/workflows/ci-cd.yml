@@ -27,6 +27,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install -U crawl4ai
           pip install pytest flake8 autopep8 pytest-asyncio
 
       - name: Set PYTHONPATH
