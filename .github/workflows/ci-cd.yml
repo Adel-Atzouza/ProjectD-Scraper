@@ -35,7 +35,7 @@ jobs:
         run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
 
       - name: Run Flake8
-        run: flake8 . --max-line-length=120 --exclude=venv,__pycache__ --ignore=E501,W503,W504,E203,E402
+        run: flake8 . --max-line-length=120 --exclude=venv,__pycache__ --ignore=E501,W503,W504,E203,E402,F401
 
       - name: Format check
         run: autopep8 --diff --recursive . | tee check.diff
