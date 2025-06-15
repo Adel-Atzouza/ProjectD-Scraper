@@ -1,14 +1,11 @@
 import os
 import sys
-
-PROGRESS_FOLDER = "progress"
-
 import re
 import json
 import asyncio
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
-from typing import List, Set
+from typing import Set
 from datetime import datetime
 from collections import defaultdict
 from crawl4ai import (
@@ -18,26 +15,29 @@ from crawl4ai import (
     CacheMode
 )
 from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
+from crawl4ai.content_filter_strategy import PruningContentFilter
 
+PROGRESS_FOLDER = "progress"
 MAX_CONCURRENT = 15
-EXCLUDE_EXTENSIONS = [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".zip", ".rar"]
+EXCLUDE_EXTENSIONS = [
+    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".zip", ".rar"
+]
 
 def is_excluded(url: str) -> bool:
     return any(url.lower().endswith(ext) for ext in EXCLUDE_EXTENSIONS)
 
-def clean_markdown_from_soup(soup):
-    lines = []
-    for el in soup.find_all(["h1", "h2", "h3", "p", "li", "ul", "ol", "a"]):
-        text = el.get_text(strip=True)
-        if text and len(text) > 50 and not re.search(r"cookie|toestemming", text, re.I):
-            lines.append(text)
-    return "\n\n".join(lines)
+def clean_text(markdown: str) -> str:
+    markdown = re.sub(r"(?m)^.*\|.*\|.*$", "", markdown)
+    markdown = re.sub(r"\[(.*?)\]\([^)]+\)", r"\1", markdown)
+    markdown = re.sub(r"#+ ", "", markdown)
+    markdown = re.sub(r"\n{3,}", "\n\n", markdown.strip())
+    sentences = re.split(r'(?<=[.!?]) +', markdown)
+    return " ".join(sentences[:5]).strip()
 
 async def collect_internal_urls(crawler, start_url: str, batch_size: int, progress_file: str) -> Set[str]:
     to_visit = set([start_url])
     visited = set()
     discovered = set()
-
     crawl_config = CrawlerRunConfig(cache_mode=CacheMode.BYPASS, markdown_generator=DefaultMarkdownGenerator())
     session_id = f"discovery_{urlparse(start_url).netloc}"
 
@@ -46,46 +46,33 @@ async def collect_internal_urls(crawler, start_url: str, batch_size: int, progre
         to_visit.difference_update(current_batch)
         visited.update(current_batch)
 
-        print(f"\n [Batch] {len(visited)} visited, {len(to_visit)} to visit...")
-
-        # Write discovery phase progress
         visited_count = len(visited)
         to_visit_count = len(to_visit)
         total_estimated = visited_count + to_visit_count
-
-        if total_estimated == 0:
-            percent_estimated = 0
-        else:
-            percent_estimated = int((visited_count / total_estimated) * 100)
-
-        percent_estimated = min(percent_estimated, 99)  # discovery max 99%
+        percent_estimated = int((visited_count / total_estimated) * 99) if total_estimated else 0
 
         with open(progress_file, "w") as f:
             json.dump({"progress": percent_estimated, "status": "discovering"}, f)
             f.flush()
             os.fsync(f.fileno())
 
-        # Actual crawling
         tasks = [crawler.arun(url, crawl_config, session_id=session_id) for url in current_batch]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         for url, res in zip(current_batch, results):
             if isinstance(res, Exception):
-                print(f"❌ {url}: {res}")
                 continue
             if res.success and res.html:
                 soup = BeautifulSoup(res.html, "html.parser")
                 for tag in soup.find_all("a", href=True):
-                    href = tag["href"]
-                    full = urljoin(url, href)
+                    full = urljoin(url, tag["href"])
                     parsed = urlparse(full)
                     if parsed.netloc == urlparse(start_url).netloc:
-                        norm = parsed.scheme + "://" + parsed.netloc + parsed.path
+                        norm = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
                         if not is_excluded(norm) and norm not in visited and norm not in to_visit:
                             to_visit.add(norm)
                             discovered.add(norm)
 
-    # Final discovery progress → 99% complete
     with open(progress_file, "w") as f:
         json.dump({"progress": 99, "status": "discovery done"}, f)
 
@@ -98,44 +85,74 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
     os.makedirs(output_dir, exist_ok=True)
 
     browser_config = BrowserConfig(headless=True)
-    crawl_config = CrawlerRunConfig(cache_mode=CacheMode.BYPASS, markdown_generator=DefaultMarkdownGenerator())
-    domain_results = defaultdict(list)
+    crawl_config = CrawlerRunConfig(
+        css_selector="main, article, section",
+        excluded_selector=".cookie, .cookie-banner, .consent, .privacy",
+        markdown_generator=DefaultMarkdownGenerator(content_filter=PruningContentFilter()),
+        stream=False
+    )
 
     done_count = 0
+    success_count = 0
+    fail_count = 0
     total_urls = len(urls)
-
-    with open(progress_file, "w") as f:
-        json.dump({"progress": 99, "status": "crawling"}, f)
+    domain_results = defaultdict(list)
 
     async with AsyncWebCrawler(config=browser_config) as crawler:
         for i in range(0, len(urls), max_concurrent):
             batch = urls[i:i + max_concurrent]
             tasks = [crawler.arun(url, crawl_config, session_id=f"batch_{i + j}") for j, url in enumerate(batch)]
-            results_batch = await asyncio.gather(*tasks, return_exceptions=True)
 
-            for url, res in zip(batch, results_batch):
-                done_count += 1
-                percent_done = int(99 + (done_count / total_urls) * (100 - 99))  # smooth transition 99 → 100
-
-                with open(progress_file, "w") as f:
-                    json.dump({"progress": percent_done, "status": "crawling"}, f)
-                    f.flush()
-                    os.fsync(f.fileno())
-
-                if isinstance(res, Exception):
-                    print(f"❌ {url}: {res}")
-                    continue
-                elif res.success:
-                    soup = BeautifulSoup(res.html, "html.parser")
-                    titel = soup.title.string.strip() if soup.title else "Onbekend"
-                    summary = clean_markdown_from_soup(soup)
-                    result = {"url": url, "titel": titel, "samenvatting": summary}
-                    netloc = urlparse(url).netloc
-                    domain_results[netloc].append(result)
-                    print(f"✅ {url} ({percent_done}%) saved to {netloc}")
+            for j, task in enumerate(tasks):
+                url = batch[j]
+                try:
+                    res = await task
+                    if res.success and res.markdown.fit_markdown:
+                        summary = clean_text(res.markdown.fit_markdown)
+                        result = {
+                            "url": url,
+                            "titel": url.rstrip("/").split("/")[-1] or urlparse(url).netloc,
+                            "samenvatting": summary
+                        }
+                        netloc = urlparse(url).netloc
+                        domain_results[netloc].append(result)
+                        success_count += 1
+                        print(f"✅ {url} toegevoegd aan {netloc}")
+                    else:
+                        fail_count += 1
+                        print(f"⚠️  {url} had geen geldige inhoud")
+                except Exception as e:
+                    fail_count += 1
+                    print(f"❌ {url}: {e}")
+                finally:
+                    done_count += 1
+                    percent_done = int(99 + (done_count / total_urls))
+                    with open(progress_file, "w") as f:
+                        json.dump({
+                            "progress": percent_done,
+                            "status": "crawling",
+                            "done": done_count,
+                            "total": total_urls,
+                            "success": success_count,
+                            "failed": fail_count
+                        }, f)
+                        f.flush()
+                        os.fsync(f.fileno())
 
     with open(progress_file, "w") as f:
-        json.dump({"progress": 100, "status": "done"}, f)
+        json.dump({
+            "progress": 100,
+            "status": "done",
+            "done": done_count,
+            "total": total_urls,
+            "success": success_count,
+            "failed": fail_count
+        }, f)
+
+    for domain, results in domain_results.items():
+        filepath = os.path.join(output_dir, f"{domain}.json")
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(results, f, ensure_ascii=False, indent=2)
 
     print(f"\n🎉 Done. Data saved in: {output_dir}")
 
@@ -166,6 +183,6 @@ if __name__ == "__main__":
 
         try:
             asyncio.run(run_one_url(url, progress_file))
-            update_progress(job_id, 100, "done")
         except Exception as e:
-            update_progress(job_id, 100, f"error: {str(e)}")
+            with open(progress_file, "w") as f:
+                json.dump({"progress": 100, "status": f"error: {str(e)}"}, f)

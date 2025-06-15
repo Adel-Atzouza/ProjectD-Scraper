@@ -5,7 +5,7 @@ import subprocess
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
-from typing import List
+from typing import List, Union
 from pydantic import BaseModel
 
 DB_FILE = "websites.json"
@@ -21,6 +21,8 @@ class Website(BaseModel):
 class WebsiteCreate(BaseModel):
     url: str
 
+class ScrapeRequest(BaseModel):
+    urls: List[str]
 
 try:
     with open("websites.json", "r", encoding="utf-8") as f:
@@ -92,30 +94,27 @@ def normalize_url(u: str) -> str:
     return u.rstrip("/").lower()
 
 @app.post("/start-scrape")
-def start_scrape(url: str):
+def start_scrape(request: ScrapeRequest):
+    job_ids = []
 
-    urls_in_db = [w["url"] for w in db_websites]
+    for url in request.urls:
+        if not any(w["url"].rstrip("/").lower() == url.rstrip("/").lower() for w in db_websites):
+            available = [w["url"] for w in db_websites]
+            raise HTTPException(
+                status_code=400,
+                detail=f'URL not in website list: {url!r}. Available URLs: {available}'
+            )
 
-    if not any(w["url"].rstrip("/").lower() == url.rstrip("/").lower() for w in db_websites):
-        available = [w["url"] for w in db_websites]
-        raise HTTPException(
-            status_code=400,
-            detail=f'URL not in website list: {url!r}. Available URLs: {available}'
-        )
-    job_id = str(uuid.uuid4())
-    progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
+        job_id = str(uuid.uuid4())
+        progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
 
-    with open(progress_file, "w") as f:
-        json.dump({"progress": 0, "status": "started"}, f)
+        with open(progress_file, "w") as f:
+            json.dump({"progress": 0, "status": "started"}, f)
 
-    subprocess.Popen([
-        "python", SCRAPER_SCRIPT, url, job_id
-    ])
+        subprocess.Popen(["python", SCRAPER_SCRIPT, url, job_id])
+        job_ids.append({"url": url, "job_id": job_id})
 
-    print("Stored URLs:", [w["url"] for w in db_websites])
-    print("Requested URL:", url)
-
-    return {"job_id": job_id, "url": url}
+    return {"jobs": job_ids}
 
 
 
