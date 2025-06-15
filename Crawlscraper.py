@@ -171,7 +171,7 @@ async def crawl_parallel(urls: List[str], max_concurrent: int):
                 domain_results[netloc].append(result)
                 print(f" ✅ {url} toegevoegd aan {netloc}")
 
-    # Schrijf alles weg naar JSON-bestanden per domein
+    # Schrijf alles weg naar JSON bestanden per domein
     for domain, results in domain_results.items():
         filepath = os.path.join(output_dir, f"{domain}.json")
         with open(filepath, "w", encoding="utf-8") as f:
