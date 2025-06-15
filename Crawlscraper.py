@@ -11,11 +11,13 @@ from crawl4ai import (
     AsyncWebCrawler,
     BrowserConfig,
     CrawlerRunConfig,
-    CacheMode
+    CacheMode,
+    CrawlResult
 )
 from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
+from crawl4ai.content_filter_strategy import PruningContentFilter
 
-START_URLS = ["https://www.sportpuntgouda.nl/"]
+START_URLS = ["https://in-gouda.nl/"]
 MAX_CONCURRENT = 15 #aantal paralell request 
 EXCLUDE_EXTENSIONS = [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".zip", ".rar"]
 
@@ -24,13 +26,14 @@ def is_excluded(url: str) -> bool:
     return any(url.lower().endswith(ext) for ext in EXCLUDE_EXTENSIONS)
 
 #haal de relavante tekstblokken uit de html en haal cookies eruit
-def clean_markdown_from_soup(soup):
-    lines = []
-    for el in soup.find_all(["h1", "h2", "h3", "p", "li", "ul", "ol", "a"]):
-        text = el.get_text(strip=True)
-        if text and len(text) > 50 and not re.search(r"cookie|toestemming", text, re.I):
-            lines.append(text)
-    return "\n\n".join(lines)
+def clean_text(markdown: str) -> str:
+    markdown = re.sub(r"(?m)^.*\|.*\|.*$", "", markdown)
+    markdown = re.sub(r"\[(.*?)\]\([^)]+\)", r"\1", markdown)
+    markdown = re.sub(r"#+ ", "", markdown)
+    markdown = re.sub(r"\n{3,}", "\n\n", markdown.strip())
+    sentences = re.split(r'(?<=[.!?]) +', markdown)
+    return " ".join(sentences[:5]).strip()
+
 
 #site crawlen beginnend bij de start url en verzamelt zo alle links in batches van 5, maar kan ook 10 of 15. ligt aan het syteem waaropt tie runt
 async def collect_internal_urls(crawler, start_url: str, batch_size=15) -> Set[str]:
@@ -75,21 +78,6 @@ async def collect_internal_urls(crawler, start_url: str, batch_size=15) -> Set[s
 
     return discovered
 
-async def run_one_url(url: str):
-    browser_config = BrowserConfig(headless=True)
-    crawler = AsyncWebCrawler(config=browser_config)
-    await crawler.start()
-
-    try:
-        print(f"\n Interne links verzamelen vanaf: {url}")
-        found_urls = await collect_internal_urls(crawler, url, batch_size=MAX_CONCURRENT)
-        print(f"🔗 {len(found_urls)} gevonden vanaf {url}")
-
-        await crawl_parallel(list(found_urls), MAX_CONCURRENT)
-
-    finally:
-        await crawler.close()
-
 async def crawl_parallel(urls: List[str], max_concurrent: int):
     print("\n=== Parallel Crawling gestart ===")
 
@@ -100,7 +88,10 @@ async def crawl_parallel(urls: List[str], max_concurrent: int):
 
     #crawl config
     browser_config = BrowserConfig(headless=True)
-    crawl_config = CrawlerRunConfig(cache_mode=CacheMode.BYPASS, markdown_generator=DefaultMarkdownGenerator())
+    crawl_config = CrawlerRunConfig(css_selector="main, article, section",
+        excluded_selector=".cookie, .cookie-banner, .consent, .privacy",
+        markdown_generator=DefaultMarkdownGenerator(content_filter=PruningContentFilter()),
+        stream=False)
 
     domain_results = defaultdict(list) #per domein verzamelen 
 
@@ -114,21 +105,21 @@ async def crawl_parallel(urls: List[str], max_concurrent: int):
                 if isinstance(res, Exception):
                     print(f" Exception @ {url}: {res}")
                     continue
-                elif res.success:
-                    html = res.html
-                    soup = BeautifulSoup(html, "html.parser")
-                    titel = soup.title.string.strip() if soup.title else "Onbekend" # Titel ophalen van de pagina (valt terug op 'Onbekend')
-                    summary = clean_markdown_from_soup(soup) # Maak samenvatting op basis van relevante tekst
+                markdown = res.markdown.fit_markdown
+                if not markdown:
+                    continue
 
-                    result = {
-                        "url": url,
-                        "titel": titel,
-                        "samenvatting": summary
-                    }
+                summary = clean_text(markdown)
 
-                    netloc = urlparse(url).netloc #het domein paken van de url, voor groepering 
-                    domain_results[netloc].append(result) # toegevoegd aan dict
-                    print(f" {url} (toegevoegd aan {netloc})")
+                result = {
+                    "url": url,
+                    "titel": url.rstrip("/").split("/")[-1] or urlparse(url).netloc,
+                    "samenvatting": summary
+                }
+
+                netloc = urlparse(url).netloc
+                domain_results[netloc].append(result)
+                print(f" ✅ {url} toegevoegd aan {netloc}")
 
     # Schrijf alles weg naar JSON-bestanden per domein
     for domain, results in domain_results.items():
