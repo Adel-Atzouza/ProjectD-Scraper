@@ -31,7 +31,6 @@ except FileNotFoundError:
     websites_list = []
 
 
-
 app = FastAPI()
 
 if os.path.exists(DB_FILE):
