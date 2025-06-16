@@ -17,7 +17,7 @@ from crawl4ai import (
 from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 from crawl4ai.content_filter_strategy import PruningContentFilter
 
-START_URLS = ["https://www.sportpuntgouda.nl/"]
+START_URLS = ["https://in-gouda.nl/"]
 MAX_CONCURRENT = 15 #aantal paralell request 
 EXCLUDE_EXTENSIONS = [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".zip", ".rar"]
 
@@ -34,12 +34,6 @@ def clean_text(markdown: str) -> str:
     sentences = re.split(r'(?<=[.!?]) +', markdown)
     return " ".join(sentences[:5]).strip()
 
-def extract_title(md: str) -> str:
-    lines = md.strip().splitlines()
-    for line in lines:
-        if line.startswith("# "): return line[2:].strip()
-        if line.startswith("## "): return line[3:].strip()
-    return "Onbekend"
 
 #site crawlen beginnend bij de start url en verzamelt zo alle links in batches van 5, maar kan ook 10 of 15. ligt aan het syteem waaropt tie runt
 async def collect_internal_urls(crawler, start_url: str, batch_size=15) -> Set[str]:
@@ -116,11 +110,10 @@ async def crawl_parallel(urls: List[str], max_concurrent: int):
                     continue
 
                 summary = clean_text(markdown)
-                title = extract_title(markdown)
 
                 result = {
                     "url": url,
-                    "titel": title,
+                    "titel": url.rstrip("/").split("/")[-1] or urlparse(url).netloc,
                     "samenvatting": summary
                 }
 
