@@ -1,14 +1,21 @@
-/* src/style.css */
-
 body {
   margin: 0;
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Roboto', Arial;
   background-color: #f9fafb;
+  color: #111827;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light dark;
+  border-bottom: 1px solid #000000;
 }
 
 header {
   background: white;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #000000;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   padding: 16px 32px;
   display: flex;
@@ -35,6 +42,15 @@ header {
   margin-right: 12px;
 }
 
+button {
+  transition: box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+button:hover {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
 button.primary {
   background: #3b82f6;
   color: white;
@@ -42,7 +58,6 @@ button.primary {
   padding: 10px 16px;
   border-radius: 8px;
   font-weight: 500;
-  cursor: pointer;
   display: flex;
   align-items: center;
   font-size: 16px;
@@ -61,7 +76,11 @@ button.primary svg {
 .stats {
   display: flex;
   gap: 20px;
+  padding: 20px;
   margin-bottom: 32px;
+  border: 1px solid #000000;
+  flex: 1;
+  transition: box-shadow 0.2s ease;
 }
 
 .stat-card {
@@ -69,10 +88,17 @@ button.primary svg {
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  
   flex: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 12px rgba(224, 4, 4, 0.08);
+  background-color: #c9cace;
 }
 
 .stat-icon {
@@ -83,7 +109,7 @@ button.primary svg {
 }
 
 .card-title {
-  color: #4b5563;
+  color: #010e20;
   font-size: 14px;
   margin: 0;
 }
@@ -99,6 +125,7 @@ button.primary svg {
   background: white;
   padding: 24px;
   border-radius: 12px;
+  border: 1px solid #032364;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
@@ -122,6 +149,13 @@ button.primary svg {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  background: white;
+  transition: box-shadow 0.2s ease;
+}
+
+.website-card:hover {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  background-color: #c9cace;
 }
 
 .website-details {
@@ -145,7 +179,7 @@ button.primary svg {
 .badge {
   font-size: 12px;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: 9999px;
   display: inline-block;
   margin-right: 8px;
 }
@@ -169,10 +203,12 @@ button.primary svg {
   background: none;
   border: none;
   font-size: 18px;
-  cursor: pointer;
   color: #9ca3af;
+  transition: box-shadow 0.2s ease;
 }
 
 .card-actions button:hover {
-  color: #6b7280;
+  color: #0c1527;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  background-color: #0c1527;
 }

@@ -1,6 +1,5 @@
 // src/components/StatCard.tsx
 import React from 'react';
-import '../src/style.css'; // Ensure you have the correct path to your CSS file
 
 
 interface StatCardProps {

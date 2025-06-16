@@ -7,7 +7,7 @@ const websites = [
   { name: 'example.com', url: 'https://example.com', status: 'Active', lastScraped: '2 hours ago' },
   { name: 'news.ycombinator.com', url: 'https://news.ycombinator.com', status: 'Active', lastScraped: '1 hour ago' },
   { name: 'github.com', url: 'https://github.com', status: 'Paused', lastScraped: '1 day ago' },
-];
+] as const;
 
 export default function Dashboard() {
   return (
