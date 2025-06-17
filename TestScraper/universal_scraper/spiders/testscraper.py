@@ -82,7 +82,12 @@ class UniversalSpider(scrapy.Spider):
                 "playwright_include_page": needs_js,
                 "playwright_page_coroutines": (
                     [
+<<<<<<< HEAD:TestScraper/universal_scraper/universal_scraper/spiders/testscraper.py
+                        {"method": "wait_for_load_state",
+                            "args": ["networkidle"]},
+=======
                         {"method": "wait_for_load_state", "args": ["networkidle"]},
+>>>>>>> dev:TestScraper/universal_scraper/spiders/testscraper.py
                         {
                             "method": "evaluate",
                             "args": ["window.scrollTo(0, document.body.scrollHeight)"],
@@ -185,7 +190,12 @@ class UniversalSpider(scrapy.Spider):
             for pattern in irrelevant_patterns:
                 raw_text = raw_text.replace(pattern, "")
             raw_text = re.sub(r"\[\#.*?\#\]", "", raw_text)
+<<<<<<< HEAD:TestScraper/universal_scraper/universal_scraper/spiders/testscraper.py
+            raw_text = re.sub(
+                r"var\s+[A-Z_]+\s*=\s*['\"].*?['\"];", "", raw_text)
+=======
             raw_text = re.sub(r"var\s+[A-Z_]+\s*=\s*['\"].*?['\"];", "", raw_text)
+>>>>>>> dev:TestScraper/universal_scraper/spiders/testscraper.py
             raw_text = re.sub(
                 r"Cookieverklaring.*?Dataduiker", "", raw_text, flags=re.DOTALL
             )
@@ -213,7 +223,8 @@ class UniversalSpider(scrapy.Spider):
 
     def is_internal(self, url):
         domain = urlparse(url).netloc
-        return any(domain.endswith(allowed) for allowed in self.allowed_domains)
+        return any(domain.endswith(allowed)
+                   for allowed in self.allowed_domains)
 
     def closed(self, reason):
         output_file = "output.csv"

@@ -1,6 +1,6 @@
-
 import unittest
 import time
+
 
 class TestScrapeDuration(unittest.TestCase):
     def test_scrape_timing(self):

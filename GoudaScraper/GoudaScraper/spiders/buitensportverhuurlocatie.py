@@ -40,7 +40,8 @@ class VerhuurSpider(scrapy.Spider):
 
     def parse_main(self, response):
         # Zoek link naar "Buitensport"
-        buitensport_url = response.css("a:contains('Buitensport')::attr(href)").get()
+        buitensport_url = response.css(
+            "a:contains('Buitensport')::attr(href)").get()
         if buitensport_url:
             yield response.follow(
                 url=buitensport_url,
@@ -52,7 +53,8 @@ class VerhuurSpider(scrapy.Spider):
                 errback=self.errback_log,
             )
         else:
-            self.logger.warning("⚠️ Geen link naar Buitensport gevonden op verhuur_2")
+            self.logger.warning(
+                "⚠️ Geen link naar Buitensport gevonden op verhuur_2")
 
     def parse_buitensport(self, response):
         # Lees algemene SPORT•GOUDA-footergegevens

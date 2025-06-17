@@ -1,6 +1,7 @@
 import scrapy
 
 
+
 class ZebraZalenSpider(scrapy.Spider):
     name = "zebra_zalen"
     start_urls = ["https://www.sportpuntgouda.nl/sporthal-de-zebra"]

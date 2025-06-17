@@ -1,6 +1,6 @@
-
 import unittest
 from scraper.utils import is_footer_text  # hypothetische functie
+
 
 class TestFooterDetection(unittest.TestCase):
     def test_detect_footer(self):

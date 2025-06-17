@@ -1,6 +1,6 @@
-
 import unittest
 from scraper.utils import extract_phone_number  # hypothetisch hulpfunctiepad
+
 
 class TestPhoneNumberExtraction(unittest.TestCase):
     def test_valid_number(self):
