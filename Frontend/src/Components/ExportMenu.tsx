@@ -1,7 +1,7 @@
 import React from "react";
 
 interface ExportMenuProps {
-    selectedWebsites: string[];
+    selectedWebsites: { id: number; url: string }[];
 }
 
 const ExportMenu: React.FC<ExportMenuProps> = ({ selectedWebsites }) => {
@@ -12,10 +12,10 @@ const ExportMenu: React.FC<ExportMenuProps> = ({ selectedWebsites }) => {
             alert("Selecteer eerst websites om te exporteren.");
             return;
         }
-
+// export nog niet gelukt idk hoe het beste dit gedaan kan worden.
         alert(
             `Mock export van ${selectedWebsites.length} website(s) als ${format.toUpperCase()}:\n` +
-            selectedWebsites.join("\n")
+            selectedWebsites.map(site => site.url)
         );
     };
 
