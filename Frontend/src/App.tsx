@@ -5,32 +5,61 @@ import WebsiteList from "./Components/WebsiteList";
 import ExportMenu from "./Components/ExportMenu";
 
 const App: React.FC = () => {
-  const [websites, setWebsites] = useState<string[]>([
-    "https://voorbeeld1.nl",
-    "https://voorbeeld2.nl",
-    "https://voorbeeld3.nl",
-  ]);
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<number[]>([]);
 
-  const handleScrape = (url: string) => {
-    if (!websites.includes(url)) {
-      setWebsites([url, ...websites]);
+  const [websites, setWebsites] = useState<{ id: number; url: string }[]>([]);
+
+
+  const handleScrape = async (url: string) => {
+    try {
+        const response = await fetch("http://localhost:8000/websites", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ url }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to scrape website: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        setWebsites([{ id: data.id, url: data.url }, ...websites]);
+
+        alert(`Scraping gestart voor: ${data.url}`);
+    } catch (error) {
+        alert(`Error: ${error}`);
     }
   };
 
-  const toggleSelect = (url: string) => {
+
+  const toggleSelect = (id: number) => {
     setSelected((prev) =>
-      prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
+      prev.includes(id) ? prev.filter((u) => u !== id) : [...prev, id]
     );
   };
 
 
 
-  const handleDelete = (url: string) => {
-    setWebsites((prev) => prev.filter((site) => site !== url));
-    setSelected((prev) => prev.filter((site) => site !== url)); // deselect if deleted
-  };
+  const handleDelete = async (id: number) => {
+    try {
+        const response = await fetch(`http://localhost:8000/websites/${id}`, {
+            method: "DELETE",
+        });
 
+        if (!response.ok) {
+            throw new Error(`Failed to delete website`);
+        }
+
+
+        setWebsites((prev) => prev.filter((site) => site.id !== id));
+        setSelected((prev) => prev.filter((siteId) => siteId !== id));
+    } catch (error) {
+        alert(`Error deleting website: ${error}`);
+    }
+  };
 
   return (
     <div className="container">
@@ -43,7 +72,7 @@ const App: React.FC = () => {
         onDelete={handleDelete}
       />
 
-      <ExportMenu selectedWebsites={selected} />
+  <ExportMenu selectedWebsites={websites.filter((site) => selected.includes(site.id))}/>
     </div>
   );
 };
