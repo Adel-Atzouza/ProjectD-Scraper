@@ -1,30 +1,62 @@
-// src/components/WebsiteCard.tsx
-import React from 'react';
+import React from "react";
 
-
-interface WebsiteCardProps {
-  name: string;
+export interface WebsiteCardProps {
   url: string;
-  status: 'Active' | 'Paused';
-  lastScraped: string;
+  lastScraped?: string;
+  onDelete: () => void;
+  progress?: number;
+  status?: string;
+  total?: number;
+  done?: number;
+  success?: number;
+  failed?: number;
 }
 
-export default function WebsiteCard({ name, url, status, lastScraped }: WebsiteCardProps) {
+export default function WebsiteCard({
+  url,
+  lastScraped,
+  onDelete,
+  progress = 0,
+  status = "idle",
+  total = 0,
+  done = 0,
+  success = 0,
+  failed = 0,
+}: WebsiteCardProps) {
+  const isWorking = ["discovering", "scraping", "done"].includes(status);
+  const displayStatus = status === "done" && done >= total ? "done" : status;
+
   return (
     <div className="website-card">
       <div className="website-details">
         <div className="logo-icon">🌐</div>
         <div className="website-info">
-          <h3>{name}</h3>
           <p>{url}</p>
           <div>
-            <span className={`badge ${status.toLowerCase()}`}>{status}</span>
-            <span style={{ fontSize: '12px', color: '#9ca3af' }}>Last scraped: {lastScraped}</span>
+            <span className={`badge ${displayStatus}`}>
+              {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
+            </span>
+            <span style={{ fontSize: "12px", color: "#9ca3af" }}>
+              Last scraped: {lastScraped ?? "Unknown"}
+            </span>
+
+            {isWorking && (
+              <>
+                <div className="progress-info">
+                  <small>
+                    {done} / {total} – ✔️{success} / ❌{failed}
+                  </small>
+                </div>
+                <div className="progress-bar">
+                  <div className="progress-fill" style={{ width: `${progress}%` }} />
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
       <div className="card-actions">
-        <button title="Delete">🗑️</button>
+        <button title="Delete" onClick={onDelete}>🗑️</button>
       </div>
     </div>
   );

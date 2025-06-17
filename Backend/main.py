@@ -2,6 +2,7 @@ import os
 import json
 import uuid
 import subprocess
+import time
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
@@ -30,6 +31,7 @@ try:
 except FileNotFoundError:
     websites_list = []
 
+running_jobs = {}
 
 app = FastAPI()
 
@@ -58,6 +60,17 @@ def save_db():
 @app.get("/websites", response_model=List[Website])
 def get_websites():
     return db_websites
+
+@app.get("/stats")
+def get_stats():
+    total = len(db_websites)
+    # For demo: completed = files in progress folder not 'started'; active job count is 0 currently
+    completed = sum(1 for fname in os.listdir(PROGRESS_FOLDER)
+                    if json.load(open(os.path.join(PROGRESS_FOLDER, fname)))["status"] == "completed")
+    active = sum(1 for fname in os.listdir(PROGRESS_FOLDER)
+                 if json.load(open(os.path.join(PROGRESS_FOLDER, fname)))["status"] == "started")
+    success_rate = f"{(completed / total * 100):.0f}%" if total > 0 else "0%"
+    return {"total":total, "active":active, "completed":completed, "success_rate":success_rate}
 
 
 @app.post("/websites", response_model=Website)
@@ -108,13 +121,41 @@ def start_scrape(request: ScrapeRequest):
         progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
 
         with open(progress_file, "w") as f:
-            json.dump({"progress": 0, "status": "started"}, f)
+            json.dump({
+                "progress": 0,
+                "status": "started",
+                "timestamp": time.time()
+            }, f)
 
-        subprocess.Popen(["python", SCRAPER_SCRIPT, url, job_id])
+        proc = subprocess.Popen(["python", SCRAPER_SCRIPT, url, job_id])
+        running_jobs[job_id] = proc
+
         job_ids.append({"url": url, "job_id": job_id})
 
     return {"jobs": job_ids}
 
+
+@app.post("/stop-scrape")
+def stop_scrape():
+    stopped = []
+    for job_id, proc in list(running_jobs.items()):
+        proc.terminate()
+        # ✅ update progress file
+        progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
+        if os.path.exists(progress_file):
+            with open(progress_file, "r+") as f:
+                try:
+                    data = json.load(f)
+                    data["status"] = "stopped"
+                    f.seek(0)
+                    json.dump(data, f, indent=2)
+                    f.truncate()
+                except Exception:
+                    pass
+
+        stopped.append(job_id)
+        del running_jobs[job_id]
+    return {"stopped": stopped}
 
 
 @app.get("/scrape-progress/{job_id}")
