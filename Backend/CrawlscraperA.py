@@ -8,37 +8,47 @@ from bs4 import BeautifulSoup
 from typing import Set
 from datetime import datetime
 from collections import defaultdict
-from crawl4ai import (
-    AsyncWebCrawler,
-    BrowserConfig,
-    CrawlerRunConfig,
-    CacheMode
-)
+from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 from crawl4ai.content_filter_strategy import PruningContentFilter
 
 PROGRESS_FOLDER = "progress"
 MAX_CONCURRENT = 15
 EXCLUDE_EXTENSIONS = [
-    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".zip", ".rar"
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".xls",
+    ".xlsx",
+    ".ppt",
+    ".pptx",
+    ".zip",
+    ".rar",
 ]
+
 
 def is_excluded(url: str) -> bool:
     return any(url.lower().endswith(ext) for ext in EXCLUDE_EXTENSIONS)
+
 
 def clean_text(markdown: str) -> str:
     markdown = re.sub(r"(?m)^.*\|.*\|.*$", "", markdown)
     markdown = re.sub(r"\[(.*?)\]\([^)]+\)", r"\1", markdown)
     markdown = re.sub(r"#+ ", "", markdown)
     markdown = re.sub(r"\n{3,}", "\n\n", markdown.strip())
-    sentences = re.split(r'(?<=[.!?]) +', markdown)
+    sentences = re.split(r"(?<=[.!?]) +", markdown)
     return " ".join(sentences[:5]).strip()
 
-async def collect_internal_urls(crawler, start_url: str, batch_size: int, progress_file: str) -> Set[str]:
+
+async def collect_internal_urls(
+    crawler, start_url: str, batch_size: int, progress_file: str
+) -> Set[str]:
     to_visit = set([start_url])
     visited = set()
     discovered = set()
-    crawl_config = CrawlerRunConfig(cache_mode=CacheMode.BYPASS, markdown_generator=DefaultMarkdownGenerator())
+    crawl_config = CrawlerRunConfig(
+        cache_mode=CacheMode.BYPASS,
+        markdown_generator=DefaultMarkdownGenerator())
     session_id = f"discovery_{urlparse(start_url).netloc}"
 
     while to_visit:
@@ -49,14 +59,21 @@ async def collect_internal_urls(crawler, start_url: str, batch_size: int, progre
         visited_count = len(visited)
         to_visit_count = len(to_visit)
         total_estimated = visited_count + to_visit_count
-        percent_estimated = int((visited_count / total_estimated) * 99) if total_estimated else 0
+        percent_estimated = (
+            int((visited_count / total_estimated)
+                * 99) if total_estimated else 0
+        )
 
         with open(progress_file, "w") as f:
-            json.dump({"progress": percent_estimated, "status": "discovering"}, f)
+            json.dump({"progress": percent_estimated,
+                      "status": "discovering"}, f)
             f.flush()
             os.fsync(f.fileno())
 
-        tasks = [crawler.arun(url, crawl_config, session_id=session_id) for url in current_batch]
+        tasks = [
+            crawler.arun(url, crawl_config, session_id=session_id)
+            for url in current_batch
+        ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         for url, res in zip(current_batch, results):
@@ -69,7 +86,11 @@ async def collect_internal_urls(crawler, start_url: str, batch_size: int, progre
                     parsed = urlparse(full)
                     if parsed.netloc == urlparse(start_url).netloc:
                         norm = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
-                        if not is_excluded(norm) and norm not in visited and norm not in to_visit:
+                        if (
+                            not is_excluded(norm)
+                            and norm not in visited
+                            and norm not in to_visit
+                        ):
                             to_visit.add(norm)
                             discovered.add(norm)
 
@@ -77,6 +98,7 @@ async def collect_internal_urls(crawler, start_url: str, batch_size: int, progre
         json.dump({"progress": 99, "status": "discovery done"}, f)
 
     return discovered
+
 
 async def crawl_parallel(urls, max_concurrent, progress_file):
     print("\n=== Start parallel crawl ===")
@@ -88,8 +110,10 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
     crawl_config = CrawlerRunConfig(
         css_selector="main, article, section",
         excluded_selector=".cookie, .cookie-banner, .consent, .privacy",
-        markdown_generator=DefaultMarkdownGenerator(content_filter=PruningContentFilter()),
-        stream=False
+        markdown_generator=DefaultMarkdownGenerator(
+            content_filter=PruningContentFilter()
+        ),
+        stream=False,
     )
 
     done_count = 0
@@ -100,8 +124,11 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
 
     async with AsyncWebCrawler(config=browser_config) as crawler:
         for i in range(0, len(urls), max_concurrent):
-            batch = urls[i:i + max_concurrent]
-            tasks = [crawler.arun(url, crawl_config, session_id=f"batch_{i + j}") for j, url in enumerate(batch)]
+            batch = urls[i: i + max_concurrent]
+            tasks = [
+                crawler.arun(url, crawl_config, session_id=f"batch_{i + j}")
+                for j, url in enumerate(batch)
+            ]
 
             for j, task in enumerate(tasks):
                 url = batch[j]
@@ -111,8 +138,9 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
                         summary = clean_text(res.markdown.fit_markdown)
                         result = {
                             "url": url,
-                            "titel": url.rstrip("/").split("/")[-1] or urlparse(url).netloc,
-                            "samenvatting": summary
+                            "titel": url.rstrip("/").split("/")[-1]
+                            or urlparse(url).netloc,
+                            "samenvatting": summary,
                         }
                         netloc = urlparse(url).netloc
                         domain_results[netloc].append(result)
@@ -128,26 +156,32 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
                     done_count += 1
                     percent_done = int(99 + (done_count / total_urls))
                     with open(progress_file, "w") as f:
-                        json.dump({
-                            "progress": percent_done,
-                            "status": "crawling",
-                            "done": done_count,
-                            "total": total_urls,
-                            "success": success_count,
-                            "failed": fail_count
-                        }, f)
+                        json.dump(
+                            {
+                                "progress": percent_done,
+                                "status": "crawling",
+                                "done": done_count,
+                                "total": total_urls,
+                                "success": success_count,
+                                "failed": fail_count,
+                            },
+                            f,
+                        )
                         f.flush()
                         os.fsync(f.fileno())
 
     with open(progress_file, "w") as f:
-        json.dump({
-            "progress": 100,
-            "status": "done",
-            "done": done_count,
-            "total": total_urls,
-            "success": success_count,
-            "failed": fail_count
-        }, f)
+        json.dump(
+            {
+                "progress": 100,
+                "status": "done",
+                "done": done_count,
+                "total": total_urls,
+                "success": success_count,
+                "failed": fail_count,
+            },
+            f,
+        )
 
     for domain, results in domain_results.items():
         filepath = os.path.join(output_dir, f"{domain}.json")
@@ -156,22 +190,27 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
 
     print(f"\n🎉 Done. Data saved in: {output_dir}")
 
+
 async def run_one_url(url: str, progress_file: str):
     browser_config = BrowserConfig(headless=True)
     crawler = AsyncWebCrawler(config=browser_config)
     await crawler.start()
     try:
         print(f"\n🌐 Crawling site: {url}")
-        found_urls = await collect_internal_urls(crawler, url, batch_size=MAX_CONCURRENT, progress_file=progress_file)
+        found_urls = await collect_internal_urls(
+            crawler, url, batch_size=MAX_CONCURRENT, progress_file=progress_file
+        )
         print(f"🔗 {len(found_urls)} links found for {url}")
         await crawl_parallel(list(found_urls), MAX_CONCURRENT, progress_file)
     finally:
         await crawler.close()
 
+
 def update_progress(job_id, percent, status="running"):
     progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
     with open(progress_file, "w") as f:
         json.dump({"progress": percent, "status": status}, f)
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 2:

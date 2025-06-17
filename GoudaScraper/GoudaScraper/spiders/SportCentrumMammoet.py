@@ -57,7 +57,8 @@ class SportcentrumMammoetSpider(scrapy.Spider):
             self.logger.error(f"❌ Fout bij verwerken van {pagina_url}: {e}")
 
     def errback_log(self, failure):
-        self.logger.error(f"❌ Pagina mislukt: {failure.request.url} - {repr(failure)}")
+        self.logger.error(
+            f"❌ Pagina mislukt: {failure.request.url} - {repr(failure)}")
 
 
 # import scrapy

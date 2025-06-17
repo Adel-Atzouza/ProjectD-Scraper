@@ -22,7 +22,8 @@ class SportpuntGoudaSpider(scrapy.Spider):
             for row in rows:
                 if row == rows[1000]:
                     break
-                time_text = row.xpath('.//td[@class="text-nowrap"]/text()[1]').get()
+                time_text = row.xpath(
+                    './/td[@class="text-nowrap"]/text()[1]').get()
                 if time_text:
                     time_text = time_text.strip()
                 else:

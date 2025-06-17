@@ -1,6 +1,6 @@
-
 import unittest
 from scraper.utils import normalize_url  # hypothetische normalisatie
+
 
 class TestURLDeduplication(unittest.TestCase):
     def test_trailing_slash(self):

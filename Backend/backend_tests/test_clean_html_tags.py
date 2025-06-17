@@ -1,6 +1,6 @@
-
 import unittest
 from scraper.utils import clean_html  # hypothetische functie
+
 
 class TestCleanHTML(unittest.TestCase):
     def test_strip_tags(self):
