@@ -39,34 +39,22 @@ def log_error(url: str, error: Exception, log_dir: str = "output/logs"):
 
 
 # Controleer of de URL eindigt op een uitgesloten extensie
+
 def is_excluded(url: str) -> bool:
-    return any(url.lower().endswith(ext) for ext in EXCLUDE_EXTENSIONS)
+    path = urlparse(url).path
+    return any(path.lower().endswith(ext) for ext in EXCLUDE_EXTENSIONS)
 
 
 # Maak de markdown-tekst schoon
 def clean_text(markdown: str) -> str:
-    markdown = re.sub(
-        r"(?m)^.*\|.*\|.*$", "", markdown
-        # Verwijder regels die tabellen bevatten (regels met minimaal twee
-        # pipes)
-    )
+    markdown = re.sub(r"(?m)^.*\|.*\|.*$", "", markdown)  # Remove table lines
     markdown = re.sub(
         r"\[(.*?)\]\([^)]+\)", r"\1", markdown
-    )  # Verwijder markdown-links, alleen de zichtbare tekst blijft over
-    markdown = re.sub(
-        r"#+ ", "", markdown
-    )  # Verwijder markdown headers (regels die beginnen met #)
-    markdown = re.sub(
-        r"\n{3,}", "\n\n", markdown.strip()
-    )  # Vervang drie of meer nieuwe regels door maximaal twee nieuwe regels
-    sentences = re.split(
-        r"(?<=[.!?]) +", markdown
-    )  # Splits de tekst op in losse zinnen
-    return " ".join(
-        sentences[:5]
-        # Geef maximaal de eerste vijf zinnen terug, samengevoegd tot één
-        # string
-    ).strip()
+    )  # Remove markdown links, keep visible text
+    markdown = re.sub(r"(?m)^#+ .*$", "", markdown)  # Remove entire header lines
+    markdown = re.sub(r"\n{3,}", "\n\n", markdown.strip())  # Reduce multiple newlines
+    sentences = re.split(r"(?<=[.!?]) +", markdown)  # Split into sentences
+    return " ".join(sentences[:5]).strip()
 
 
 # # Haal de titel uit de markdown (eerste regel die met '# ' begint)
