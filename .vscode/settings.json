@@ -1,7 +1,6 @@
 {
-    "python.testing.pytestArgs": [
-        "TestScraper"
-    ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+  "python.testing.pytestArgs": ["TestScraper"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.analysis.extraPaths": ["./TestScraper/universal_scraper/spiders"]
 }

@@ -1,5 +1,5 @@
 import scrapy
-from scrapy_playwright.page import PageMethod
+
 
 class ZebraZalenSpider(scrapy.Spider):
     name = "zebra_zalen"
@@ -10,7 +10,7 @@ class ZebraZalenSpider(scrapy.Spider):
             "verhuur_locaties.csv": {
                 "format": "csv",
                 "fields": ["categorie", "locatie", "pagina_url", "zaal_naam"],
-                "encoding": "utf8"
+                "encoding": "utf8",
             }
         },
         "DOWNLOAD_HANDLERS": {
@@ -30,7 +30,7 @@ class ZebraZalenSpider(scrapy.Spider):
                     "playwright": True,
                 },
                 callback=self.parse_zalen,
-                errback=self.errback_log
+                errback=self.errback_log,
             )
 
     def parse_zalen(self, response):
@@ -49,10 +49,12 @@ class ZebraZalenSpider(scrapy.Spider):
                         "categorie": "Binnensport",
                         "locatie": locatie,
                         "pagina_url": pagina_url,
-                        "zaal_naam": zaal_naam
+                        "zaal_naam": zaal_naam,
                     }
         except Exception as e:
             self.logger.error(f"❌ Fout bij parseren van {pagina_url}: {e}")
 
     def errback_log(self, failure):
-        self.logger.error(f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}")
+        self.logger.error(
+            f"❌ Fout bij laden van pagina: {failure.request.url} - {repr(failure)}"
+        )

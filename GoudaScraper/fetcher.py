@@ -10,6 +10,7 @@ import time
 MAX_WEEKS_MODE = True
 MAX_WEEKS = 52  # Only used if MAX_WEEKS_MODE is True
 
+
 def get_event_links():
     chrome_options = Options()
     chrome_options.add_argument("--headless")
@@ -37,7 +38,9 @@ def get_event_links():
                 break
 
             next_week_btn = wait.until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, ".calendar-form__date-next.js-date-next"))
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, ".calendar-form__date-next.js-date-next")
+                )
             )
             driver.execute_script("arguments[0].scrollIntoView(true);", next_week_btn)
             time.sleep(0.5)
@@ -51,6 +54,7 @@ def get_event_links():
 
     driver.quit()
     return list(links)
+
 
 EVENT_LINKS = get_event_links()
 
