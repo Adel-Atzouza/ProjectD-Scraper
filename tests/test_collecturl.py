@@ -4,11 +4,13 @@ from unittest.mock import AsyncMock
 from urllib.parse import urlparse
 from Crawlscraper import collect_internal_urls
 
+
 # DummyResult simuleert het resultaat van een crawl
 class DummyResult:
     def __init__(self, success, html):
         self.success = success
         self.html = html
+
 
 # Test dat alleen interne, niet-uitgesloten URLs worden verzameld
 @pytest.mark.asyncio
@@ -27,7 +29,8 @@ async def test_collect_internal_urls_only_within_domain():
 
     # Maak een crawler-mock aan die altijd hetzelfde HTML-resultaat teruggeeft
     crawler_mock = AsyncMock()
-    crawler_mock.arun.return_value = DummyResult(success=True, html=html_content)
+    crawler_mock.arun.return_value = DummyResult(
+        success=True, html=html_content)
 
     # Roep de echte functie aan met deze fake crawler
     start_url = "https://in-gouda.nl/"
@@ -42,14 +45,15 @@ async def test_collect_internal_urls_only_within_domain():
     assert all("externedomein.nl" not in url for url in parsed_urls)
     assert all(not url.endswith(".pdf") for url in parsed_urls)
 
+
 # Test dat dubbele URLs worden overgeslagen bij het verzamelen
 def test_skip_duplicate_urls():
     input_urls = [
         "https://in-gouda.nl/contact",
         "https://in-gouda.nl/info",
         "https://in-gouda.nl/contact",  # duplicate
-        "https://in-gouda.nl/info",     # duplicate
-        "https://in-gouda.nl/home"
+        "https://in-gouda.nl/info",  # duplicate
+        "https://in-gouda.nl/home",
     ]
 
     seen = set()
@@ -66,15 +70,18 @@ def test_skip_duplicate_urls():
     assert "https://in-gouda.nl/info" in output
     assert "https://in-gouda.nl/home" in output
 
+
 # Test dat visited-tracking werkt en alleen unieke pagina's worden bezocht
 def test_skip_duplicate_urls_with_visited_tracking():
     start_url = "https://in-gouda.nl/"
-    to_visit = set([
-        "https://in-gouda.nl/contact",
-        "https://in-gouda.nl/info",
-        "https://in-gouda.nl/contact",  # duplicate
-        "https://in-gouda.nl/home"
-    ])
+    to_visit = set(
+        [
+            "https://in-gouda.nl/contact",
+            "https://in-gouda.nl/info",
+            "https://in-gouda.nl/contact",  # duplicate
+            "https://in-gouda.nl/home",
+        ]
+    )
     visited = set()
     discovered = set()
 
@@ -106,7 +113,7 @@ def test_skip_duplicate_urls_with_visited_tracking():
         "https://in-gouda.nl/contact",
         "https://in-gouda.nl/info",
         "https://in-gouda.nl/home",
-        "https://in-gouda.nl/nieuw"
+        "https://in-gouda.nl/nieuw",
     }
     assert len(visited) == 4
     assert "https://in-gouda.nl/contact" in visited
@@ -117,7 +124,7 @@ def test_skip_duplicate_urls_with_visited_tracking():
         "https://in-gouda.nl/contact",
         "https://in-gouda.nl/info",
         "https://in-gouda.nl/home",
-        "https://in-gouda.nl/nieuw"
+        "https://in-gouda.nl/nieuw",
     ]
     actual_order = list(visited)
     for url in expected_order:

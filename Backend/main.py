@@ -10,26 +10,29 @@ from pydantic import BaseModel
 
 DB_FILE = "websites.json"
 PROGRESS_FOLDER = "progress"
-SCRAPER_SCRIPT = "CrawlscraperA.py" 
+SCRAPER_SCRIPT = "CrawlscraperA.py"
 
 os.makedirs(PROGRESS_FOLDER, exist_ok=True)
+
 
 class Website(BaseModel):
     id: int
     url: str
 
+
 class WebsiteCreate(BaseModel):
     url: str
 
+
 class ScrapeRequest(BaseModel):
     urls: List[str]
+
 
 try:
     with open("websites.json", "r", encoding="utf-8") as f:
         websites_list = json.load(f)
 except FileNotFoundError:
     websites_list = []
-
 
 
 app = FastAPI()
@@ -53,7 +56,6 @@ app.add_middleware(
 def save_db():
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(db_websites, f, indent=2, ensure_ascii=False)
-
 
 
 @app.get("/websites", response_model=List[Website])
@@ -86,24 +88,29 @@ def delete_website(website_id: int):
         if w["id"] == website_id:
             db_websites.remove(w)
             save_db()
-            return {"detail": "Website removed", "id": website_id, "url": w["url"]}
+            return {
+                "detail": "Website removed",
+                "id": website_id,
+                "url": w["url"]}
 
     raise HTTPException(status_code=404, detail="Website not found")
 
+
 def normalize_url(u: str) -> str:
     return u.rstrip("/").lower()
+
 
 @app.post("/start-scrape")
 def start_scrape(request: ScrapeRequest):
     job_ids = []
 
     for url in request.urls:
-        if not any(w["url"].rstrip("/").lower() == url.rstrip("/").lower() for w in db_websites):
+        if not any(w["url"].rstrip("/").lower() ==
+                   url.rstrip("/").lower() for w in db_websites):
             available = [w["url"] for w in db_websites]
             raise HTTPException(
-                status_code=400,
-                detail=f'URL not in website list: {url!r}. Available URLs: {available}'
-            )
+                status_code=400, detail=f"URL not in website list: {
+                    url!r}. Available URLs: {available}", )
 
         job_id = str(uuid.uuid4())
         progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
@@ -117,14 +124,13 @@ def start_scrape(request: ScrapeRequest):
     return {"jobs": job_ids}
 
 
-
 @app.get("/scrape-progress/{job_id}")
 def scrape_progress(job_id: str):
     progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
     if not os.path.exists(progress_file):
         raise HTTPException(status_code=404, detail="Job not found")
-    
+
     with open(progress_file, "r") as f:
         progress_data = json.load(f)
-    
+
     return JSONResponse(content=progress_data)

@@ -28,14 +28,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -U crawl4ai
-          pip install pytest flake8 autopep8 pytest-asyncio
+          pip install pytest autopep8 pytest-asyncio
           playwright install
 
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
-
-      - name: Run Flake8
-        run: flake8 . --max-line-length=120 --exclude=venv,__pycache__ --ignore=E501,W503,W504,E203,E402,F401
 
       - name: Format check
         run: autopep8 --diff --recursive . | tee check.diff

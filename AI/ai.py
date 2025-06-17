@@ -1,5 +1,6 @@
 # prompt = "Geef een uitgebreide samenvatting in bullet points van deze tekst. \t"
 
+
 def parse(content: str) -> str:
 
     prompt = (
@@ -10,7 +11,6 @@ def parse(content: str) -> str:
         "3. **Lege Reactie:** Als er geen informatie overeenkomt met de beschrijving, retourneer dan een lege string ('')."
         "4. **Alleen Gevraagde Gegevens:** Je output mag uitsluitend de expliciet gevraagde gegevens bevatten, zonder andere tekst."
     )
-
 
     args = [
         "ollama",

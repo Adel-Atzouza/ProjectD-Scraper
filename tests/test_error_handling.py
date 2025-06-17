@@ -4,10 +4,12 @@ import pytest
 from unittest.mock import patch
 from Crawlscraper import log_error, crawl_parallel
 
+
 # Dummy markdown-resultaat voor geslaagde fake-crawl
 class DummyMarkdown:
     def __init__(self, text):
         self.fit_markdown = text
+
 
 # DummyResult simuleert een crawl-resultaat (succesvol of niet)
 class DummyResult:
@@ -15,11 +17,14 @@ class DummyResult:
         self.success = True
         self.markdown = DummyMarkdown(markdown)
 
-# Fixture: verwijder testoutput vóór elke test om een schone omgeving te garanderen
+
+# Fixture: verwijder testoutput vóór elke test om een schone omgeving te
+# garanderen
 @pytest.fixture(autouse=True)
 def cleanup_testoutput():
     if os.path.exists("testoutput"):
         shutil.rmtree("testoutput")
+
 
 # Test: log_error schrijft correct naar testoutput/logs/
 def test_log_error_creates_log_file_in_testoutput():
@@ -40,13 +45,14 @@ def test_log_error_creates_log_file_in_testoutput():
         assert "Testfout" in content
         assert "[" in content  # timestamp aanwezig
 
+
 # Test: crawl_parallel logt fouten naar testoutput/logs/
 @pytest.mark.asyncio
 async def test_crawl_parallel_handles_exceptions():
     urls = [
         "https://in-gouda.nl/geslaagd",
         "https://in-gouda.nl/timeout",
-        "https://in-gouda.nl/404"
+        "https://in-gouda.nl/404",
     ]
 
     # Fake async crawl-functie: alleen 'geslaagd' slaagt, de rest faalt
