@@ -4,11 +4,13 @@ from unittest.mock import AsyncMock
 from urllib.parse import urlparse
 from Crawlscraper import collect_internal_urls
 
+# DummyResult simuleert het resultaat van een crawl
 class DummyResult:
     def __init__(self, success, html):
         self.success = success
         self.html = html
 
+# Test dat alleen interne, niet-uitgesloten URLs worden verzameld
 @pytest.mark.asyncio
 async def test_collect_internal_urls_only_within_domain():
     # Simuleer HTML met interne én externe links
@@ -23,7 +25,7 @@ async def test_collect_internal_urls_only_within_domain():
         </html>
     """
 
-    # Maak een crawler-mock aan
+    # Maak een crawler-mock aan die altijd hetzelfde HTML-resultaat teruggeeft
     crawler_mock = AsyncMock()
     crawler_mock.arun.return_value = DummyResult(success=True, html=html_content)
 
@@ -31,7 +33,7 @@ async def test_collect_internal_urls_only_within_domain():
     start_url = "https://in-gouda.nl/"
     found_urls = await collect_internal_urls(crawler_mock, start_url, batch_size=5)
 
-    # Resultaat controleren
+    # Controleer dat alleen interne, niet-uitgesloten URLs gevonden zijn
     parsed_urls = sorted(found_urls)
     assert all(urlparse(url).netloc == "in-gouda.nl" for url in parsed_urls)
     assert "https://in-gouda.nl/internal-page" in parsed_urls
@@ -40,6 +42,7 @@ async def test_collect_internal_urls_only_within_domain():
     assert all("externedomein.nl" not in url for url in parsed_urls)
     assert all(not url.endswith(".pdf") for url in parsed_urls)
 
+# Test dat dubbele URLs worden overgeslagen bij het verzamelen
 def test_skip_duplicate_urls():
     input_urls = [
         "https://in-gouda.nl/contact",
@@ -52,6 +55,7 @@ def test_skip_duplicate_urls():
     seen = set()
     output = []
 
+    # Voeg alleen unieke URLs toe aan output
     for url in input_urls:
         if url not in seen:
             seen.add(url)
@@ -62,6 +66,7 @@ def test_skip_duplicate_urls():
     assert "https://in-gouda.nl/info" in output
     assert "https://in-gouda.nl/home" in output
 
+# Test dat visited-tracking werkt en alleen unieke pagina's worden bezocht
 def test_skip_duplicate_urls_with_visited_tracking():
     start_url = "https://in-gouda.nl/"
     to_visit = set([
@@ -90,6 +95,7 @@ def test_skip_duplicate_urls_with_visited_tracking():
             else:
                 new_links = []
 
+            # Voeg alleen nieuwe, nog niet bezochte links toe
             for link in new_links:
                 if link not in visited and link not in to_visit:
                     to_visit.add(link)
@@ -116,5 +122,3 @@ def test_skip_duplicate_urls_with_visited_tracking():
     actual_order = list(visited)
     for url in expected_order:
         assert url in actual_order
-
-
