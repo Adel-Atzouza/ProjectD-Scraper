@@ -80,9 +80,10 @@
  'opties:Ik heb meer informatie nodigDe informatie is niet correctDe pagina is '
  'moeilijk te begrijpenToelichting:Mag de webbeheerder contact met u opnemen '
  'over uw beoordeling?JaNeeDe webbeheerder kan alleen contact met u opnemen, '
- 'als u uw gegevens invult.Naam: *Bedrijf:E-mailadres: *Anti-spamvraag: *Welke '
- 'kleur heeft gras?\xa0 Verstuur mijn beoordelingVergelijk hulpaanbodPopulaire '
- 'onderwerpenBurenruzie of overlastBijstandCliëntondersteuningDagbesteding '
+ 'als u uw gegevens invult.Naam: *Bedrijf:E-mailadres: *Anti-spamvraag: *Met '
+ "hoeveel letters schrijf je 'ei'?\xa0 Verstuur mijn beoordelingVergelijk "
+ 'hulpaanbodPopulaire onderwerpenBurenruzie of '
+ 'overlastBijstandCliëntondersteuningDagbesteding '
  'zoekenDagopvangDaklozenopvangHulp bij het '
  'huishoudenGoudvoorelkaarHuurwoningenJeugdhulpNederlandse '
  'taalMantelzorgwaarderingParkeerkaartSeniorenwoning of zorgwoningSoorten '

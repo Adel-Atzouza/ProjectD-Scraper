@@ -1,4 +1,6 @@
 from Crawlscraper import clean_text, extract_title, is_excluded
+import Crawlscraper
+print(dir(Crawlscraper))
 
 
 def test_is_excluded():

@@ -89,8 +89,8 @@
  'meer informatie nodigDe informatie is niet correctDe pagina is moeilijk te '
  'begrijpenToelichting:Mag de webbeheerder contact met u opnemen over uw '
  'beoordeling?JaNeeDe webbeheerder kan alleen contact met u opnemen, als u uw '
- "gegevens invult.Naam: *Bedrijf:E-mailadres: *Anti-spamvraag: *Is het 's "
- 'nachts licht of donker?\xa0 Verstuur mijn beoordelingVergelijk '
+ 'gegevens invult.Naam: *Bedrijf:E-mailadres: *Anti-spamvraag: *Is een muis '
+ 'kleiner dan een olifant?\xa0 Verstuur mijn beoordelingVergelijk '
  'hulpaanbodPopulaire onderwerpenBurenruzie of '
  'overlastBijstandCliëntondersteuningDagbesteding '
  'zoekenDagopvangDaklozenopvangHulp bij het '
