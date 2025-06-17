@@ -38,8 +38,7 @@ class OnderwerpenSpider(scrapy.Spider):
                 yield scrapy.Request(
                     next_page,
                     callback=self.parse_artikel,
-                    meta={"onderwerp": onderwerp,
-                          "subonderwerp": artikelen_titles[i]},
+                    meta={"onderwerp": onderwerp, "subonderwerp": artikelen_titles[i]},
                 )
 
     def parse_artikel(self, response):
@@ -61,8 +60,7 @@ class OnderwerpenSpider(scrapy.Spider):
             yield scrapy.Request(
                 next_page,
                 callback=self.parse_artikel_artikel,
-                meta={"o": [onderwerp, subonderwerp,
-                            subsubonderwerptitles[i], a]},
+                meta={"o": [onderwerp, subonderwerp, subsubonderwerptitles[i], a]},
             )
 
     def parse_artikel_artikel(self, response):
@@ -88,8 +86,9 @@ class OnderwerpenSpider(scrapy.Spider):
         file_path = Path(__file__).parent.parent / filename
         with open(file_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
-            writer.writerow(["onderwerp", "subonderwerp",
-                             "2ndsubonderwerp", "link", "description"])
+            writer.writerow(
+                ["onderwerp", "subonderwerp", "2ndsubonderwerp", "link", "description"]
+            )
             data = sorted(data, key=lambda x: (x[0]))
             writer.writerows(data)
         print(f"Data saved to {file_path}")

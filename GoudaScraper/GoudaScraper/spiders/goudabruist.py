@@ -49,7 +49,9 @@ class GoudaBruistSpider(scrapy.Spider):
         else:
             total_time = time.time() - self.start_time
             print(
-                f"✅ Scraping voltooid. Totale tijd: {total_time:.2f} seconden")
+                f"✅ Scraping voltooid. Totale tijd: {
+                    total_time:.2f} seconden"
+            )
 
     def parse_activities(self, response):
         activities = response.css("div.card-body")
@@ -61,8 +63,7 @@ class GoudaBruistSpider(scrapy.Spider):
             time_event = activity.css("div.go_date-time-wrapper::text").get()
             title = activity.css("div.go_card-title-wrapper::text").get()
             source = activity.css("div.go_source-name-wrapper::text").get()
-            description = activity.css(
-                "div.go_content-start-wrapper::text").get()
+            description = activity.css("div.go_content-start-wrapper::text").get()
 
             href = activity.xpath("ancestor::a[1]/@href").get()
             detail_url = response.urljoin(href) if href else None

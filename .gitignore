@@ -1,0 +1,15 @@
+venv/
+.venv/
+
+__pycache__/
+.pytest_cache/
+
+output/
+
+.playwright/
+downloads/
+
+.vscode/
+
+.DS_Store
+Thumbs.db

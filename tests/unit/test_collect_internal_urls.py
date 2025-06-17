@@ -1,10 +1,18 @@
+<<<<<<< HEAD
 from Crawlscraper import collect_internal_urls
+=======
+>>>>>>> dev
 import pytest
 import sys
 import os
 
+<<<<<<< HEAD
 sys.path.append(os.path.abspath(
     os.path.join(os.path.dirname(__file__), "../../")))
+=======
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+from Crawlscraper import collect_internal_urls
+>>>>>>> dev
 
 
 @pytest.mark.asyncio

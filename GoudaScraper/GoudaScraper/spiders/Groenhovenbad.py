@@ -51,8 +51,7 @@ class GroenhovenbadSpider(scrapy.Spider):
             for naam in response.css("h5.card-title.text-theme-1::text"):
                 bad_naam = naam.get().strip()
                 if not bad_naam:
-                    self.logger.warning(
-                        f"⚠️ Lege badnaam gevonden op {pagina_url}")
+                    self.logger.warning(f"⚠️ Lege badnaam gevonden op {pagina_url}")
                     continue
 
                 yield {
@@ -90,7 +89,8 @@ class GroenhovenbadSpider(scrapy.Spider):
 
                     if not current_name:
                         self.logger.warning(
-                            f"⚠️ Rij met afmetingen/tarief maar zonder item_naam op {pagina_url}")
+                            f"⚠️ Rij met afmetingen/tarief maar zonder item_naam op {pagina_url}"
+                        )
                         continue
 
                     yield {
@@ -104,8 +104,7 @@ class GroenhovenbadSpider(scrapy.Spider):
                     }
 
         except Exception as e:
-            self.logger.error(
-                f"❌ Fout bij het verwerken van {pagina_url}: {e}")
+            self.logger.error(f"❌ Fout bij het verwerken van {pagina_url}: {e}")
 
     def errback_log(self, failure):
         self.logger.error(

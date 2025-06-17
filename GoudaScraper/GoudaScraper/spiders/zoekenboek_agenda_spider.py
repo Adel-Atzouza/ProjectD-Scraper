@@ -43,8 +43,7 @@ class KwadraadAgendaSpider(scrapy.Spider):
             location=" ".join(
                 response.css(".calendar-popup__location-text::text").getall()
             ).strip(),
-            max_persons=clean(response.css(
-                ".calendar-popup__max-amount::text")),
+            max_persons=clean(response.css(".calendar-popup__max-amount::text")),
             contact_name=(
                 clean(contact_blocks[0].css("::text"))
                 if len(contact_blocks) > 0

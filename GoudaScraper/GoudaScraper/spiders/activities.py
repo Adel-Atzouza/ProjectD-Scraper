@@ -43,8 +43,7 @@ class ActivitiesSpider(scrapy.Spider):
             url = card.css("::attr(href)").get()
             title = card.css("h3.b-card__title::text").get(default="").strip()
             date = card.css("span.start-date::text").get(default="").strip()
-            time = card.css(
-                "span.start-date-time::text").get(default="").strip()
+            time = card.css("span.start-date-time::text").get(default="").strip()
             time = " ".join(time.split())
             location = card.css("span.text::text").get(default="").strip()
 
@@ -86,12 +85,9 @@ class ActivitiesSpider(scrapy.Spider):
         description = " ".join(paragraphs).strip()
 
         # Contact details
-        contact_name = response.css(
-            ".b-person__name::text").get(default="").strip()
-        contact_email = response.css(
-            'a[href^="mailto:"]::text').get(default="").strip()
-        contact_phone = response.css(
-            'a[href^="tel:"]::text').get(default="").strip()
+        contact_name = response.css(".b-person__name::text").get(default="").strip()
+        contact_email = response.css('a[href^="mailto:"]::text').get(default="").strip()
+        contact_phone = response.css('a[href^="tel:"]::text').get(default="").strip()
 
         self.csv_writer.writerow(
             [

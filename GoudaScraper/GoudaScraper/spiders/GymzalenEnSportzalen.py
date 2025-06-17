@@ -48,7 +48,9 @@ class GymzaalSpider(scrapy.Spider):
             cards = response.css("div.card-stretch-hover")
             if not cards:
                 self.logger.warning(
-                    f"⚠️ Geen gymzalen gevonden op {response.url}")
+                    f"⚠️ Geen gymzalen gevonden op {
+                        response.url}"
+                )
 
             for card in cards:
                 naam = card.css("h5.card-title::text").get(default="").strip()
@@ -86,7 +88,8 @@ class GymzaalSpider(scrapy.Spider):
                 }
         except Exception as e:
             self.logger.error(
-                f"❌ Fout tijdens verwerken van gymzalen op {response.url}: {e}"
+                f"❌ Fout tijdens verwerken van gymzalen op {
+                    response.url}: {e}"
             )
 
     def errback_log(self, failure):

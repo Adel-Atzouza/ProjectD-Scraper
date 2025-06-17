@@ -33,13 +33,13 @@ class OrganisatiesSpider(scrapy.Spider):
                 ".searchResults__content.-textContainer p::text"
             ).get()
             telefoon = org.css('a[href^="tel:"]::text').get()
-            email = org.css('a[href^="mailto:"]::attr(href)').re_first(
-                r"mailto:(.*)")
+            email = org.css('a[href^="mailto:"]::attr(href)').re_first(r"mailto:(.*)")
             website = org.css("a.external::attr(href)").get()
             straat = org.css("span.-iconAddress::text").get()
             postcode = org.css("span.-locationZip::text").get()
             adres = (
-                f"{straat}, {postcode}" if straat and postcode else straat or postcode)
+                f"{straat}, {postcode}" if straat and postcode else straat or postcode
+            )
 
             yield {
                 "naam": (naam or "").strip(),

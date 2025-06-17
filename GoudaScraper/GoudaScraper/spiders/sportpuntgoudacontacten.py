@@ -81,10 +81,8 @@ class ContactenSpider(scrapy.Spider):
         try:
             if "beweegmakelaars" in url:
                 for card in response.css(".card-stretch-hover"):
-                    naam = card.css(
-                        "h5.card-title::text").get(default="").strip()
-                    tekst = " ".join(card.xpath(
-                        ".//p//text()").getall()).strip()
+                    naam = card.css("h5.card-title::text").get(default="").strip()
+                    tekst = " ".join(card.xpath(".//p//text()").getall()).strip()
                     email = (
                         card.css("a[href^='mailto:']::attr(href)")
                         .get(default="")
@@ -177,8 +175,7 @@ class ContactenSpider(scrapy.Spider):
                 }
 
             elif "kenniscentrum" in url:
-                titel = response.css(
-                    "h5.card-title::text").get(default="").strip()
+                titel = response.css("h5.card-title::text").get(default="").strip()
                 naam, functie = (titel.split("|") + [""])[:2]
                 yield {
                     "categorie": "kenniscentrum",
@@ -220,8 +217,7 @@ class ContactenSpider(scrapy.Spider):
 
             elif "sociaal-domein" in url:
                 for persoon in response.css("div.card-stretch-hover"):
-                    naam_functie = persoon.css(
-                        "h6::text").get(default="").strip()
+                    naam_functie = persoon.css("h6::text").get(default="").strip()
                     email = (
                         persoon.css("a[href^='mailto:']::attr(href)")
                         .get(default="")
@@ -242,8 +238,7 @@ class ContactenSpider(scrapy.Spider):
                     }
 
             elif "tipkaart-zorgverleners" in url:
-                titel = response.css(
-                    "h5.card-title::text").get(default="").strip()
+                titel = response.css("h5.card-title::text").get(default="").strip()
                 naam, functie = (titel.split("|") + [""])[:2]
                 yield {
                     "categorie": "sport-zorgverleners",
@@ -259,8 +254,7 @@ class ContactenSpider(scrapy.Spider):
                 }
 
             elif "gouds-leefstijlakkoord" in url:
-                titel = response.css(
-                    "h5.card-title::text").get(default="").strip()
+                titel = response.css("h5.card-title::text").get(default="").strip()
                 naam, functie = (titel.split("|") + [""])[:2]
                 yield {
                     "categorie": "gouds leefstijlakkoord",

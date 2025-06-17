@@ -36,7 +36,10 @@ jobs:
 
       - name: Format check
         run: autopep8 --diff --recursive . | tee check.diff
-
+      
+      - name: Test Crawlscraper import
+        run: python -c "import Crawlscraper"
+        
       - name: Run Tests
         run: pytest tests/ --disable-warnings
 

@@ -46,7 +46,9 @@ class SportAanbiedersSpider(scrapy.Spider):
             cards = response.css(".accordion .card")
             if not cards:
                 self.logger.warning(
-                    f"⚠️ Geen sportkaarten gevonden op {response.url}")
+                    f"⚠️ Geen sportkaarten gevonden op {
+                        response.url}"
+                )
 
             vorige_soort = None
 
@@ -59,10 +61,8 @@ class SportAanbiedersSpider(scrapy.Spider):
                         continue
 
                     soort_sport = cols[0].css("::text").get(default="").strip()
-                    sportaanbieder = cols[1].css(
-                        "::text").get(default="").strip()
-                    website = cols[2].css("a::attr(href)").get(
-                        default="").strip()
+                    sportaanbieder = cols[1].css("::text").get(default="").strip()
+                    website = cols[2].css("a::attr(href)").get(default="").strip()
 
                     if not sportaanbieder and not website:
                         continue
@@ -86,7 +86,9 @@ class SportAanbiedersSpider(scrapy.Spider):
 
         except Exception as e:
             self.logger.error(
-                f"❌ Fout bij het verwerken van {response.url}: {e}")
+                f"❌ Fout bij het verwerken van {
+                    response.url}: {e}"
+            )
 
     def errback_log(self, failure):
         self.logger.error(

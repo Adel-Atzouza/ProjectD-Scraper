@@ -1,6 +1,9 @@
 # prompt = "Geef een uitgebreide samenvatting in bullet points van deze tekst. \t"
 
 
+import os
+
+
 def parse(content: str) -> str:
 
     prompt = (

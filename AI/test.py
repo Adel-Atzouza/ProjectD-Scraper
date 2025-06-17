@@ -14,7 +14,8 @@ def is_valid_subpath_link(base_url, target_url):
     base_parts = urlparse(base_url)
     target_parts = urlparse(target_url)
     return base_parts.netloc == target_parts.netloc and target_parts.path.startswith(
-        base_parts.path)
+        base_parts.path
+    )
 
 
 async def scrape_page(context, url, base_url, to_visit):

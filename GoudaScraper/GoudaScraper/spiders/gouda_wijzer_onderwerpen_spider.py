@@ -42,8 +42,7 @@ class OnderwerpenSpider(scrapy.Spider):
     def parse_onderwerp_artikels(self, response):
         onderwerp_artikels = response.css("div.indexSubjectItem")
         for artikel in onderwerp_artikels:
-            subonderwerp = artikel.css(
-                "h2.indexSubjectItem__header *::text").get()
+            subonderwerp = artikel.css("h2.indexSubjectItem__header *::text").get()
             artikelen = artikel.css(
                 "ul.indexSubjectSubItemContainer *::attr(href)"
             ).getall()

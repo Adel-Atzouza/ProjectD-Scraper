@@ -1,5 +1,5 @@
 import scrapy
-from scrapy_playwright.page import PageMethod
+
 
 
 class ZebraZalenSpider(scrapy.Spider):
