@@ -1,5 +1,6 @@
 import os
 import json
+import sys
 import uuid
 import subprocess
 import time
@@ -127,7 +128,14 @@ def start_scrape(request: ScrapeRequest):
                 "timestamp": time.time()
             }, f)
 
-        proc = subprocess.Popen(["python", SCRAPER_SCRIPT, url, job_id])
+        proc = subprocess.Popen(["python", SCRAPER_SCRIPT, url, job_id],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                text=True
+                            )
+        for line in proc.stdout:
+            print(line, end="") 
+
         running_jobs[job_id] = proc
 
         job_ids.append({"url": url, "job_id": job_id})

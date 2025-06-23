@@ -3,6 +3,9 @@ import sys
 import re
 import json
 import asyncio
+import platform
+import signal
+import warnings
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from typing import Set
@@ -11,6 +14,15 @@ from collections import defaultdict
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 from crawl4ai.content_filter_strategy import PruningContentFilter
+import hashlib
+
+
+# Fix for Windows asyncio subprocess issue
+if platform.system() == "Windows":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    # Suppress ResourceWarnings for unclosed transports
+    warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed transport")
+
 
 PROGRESS_FOLDER = "progress"
 MAX_CONCURRENT = 15
@@ -120,7 +132,7 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
     success_count = 0
     fail_count = 0
     total_urls = len(urls)
-    domain_results = defaultdict(list)
+    domain_results = defaultdict(dict)
 
     async with AsyncWebCrawler(config=browser_config) as crawler:
         for i in range(0, len(urls), max_concurrent):
@@ -132,18 +144,37 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
 
             for j, task in enumerate(tasks):
                 url = batch[j]
+                netloc = urlparse(url).netloc
+                output_filepath = os.path.join(output_dir, f"{netloc}.json")
+
                 try:
                     res = await task
                     if res.success and res.markdown.fit_markdown:
+                        if os.path.exists(output_filepath):
+                            
+                            with open(output_filepath, "r", encoding="utf-8") as f:
+                                existing_data = json.load(f)
+                                if url in existing_data:
+                                    if existing_data[url]["hash"] == hashlib.sha256(
+                                        res.markdown.encode()).hexdigest():
+                                        print(f"🔄 {url} al verwerkt, overslaan")
+                                        done_count += 1
+                                        continue
+                                    
+                        
                         summary = clean_text(res.markdown.fit_markdown)
                         result = {
                             "url": url,
                             "titel": url.rstrip("/").split("/")[-1]
                             or urlparse(url).netloc,
                             "samenvatting": summary,
+                            "hash": hashlib.sha256(res.markdown.encode()).hexdigest(),
                         }
-                        netloc = urlparse(url).netloc
-                        domain_results[netloc].append(result)
+                        
+                        if netloc not in domain_results:
+                            domain_results[netloc] = {}
+                        domain_results[netloc][url] = result
+
                         success_count += 1
                         print(f"✅ {url} toegevoegd aan {netloc}")
                     else:
@@ -212,7 +243,34 @@ def update_progress(job_id, percent, status="running"):
         json.dump({"progress": percent, "status": status}, f)
 
 
+def cleanup_tasks():
+    """Clean up any pending tasks and close the event loop properly"""
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # Cancel all pending tasks
+            pending = asyncio.all_tasks(loop)
+            for task in pending:
+                task.cancel()
+            # Wait for tasks to complete cancellation
+            if pending:
+                loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+    except Exception:
+        pass
+
+
+def signal_handler(signum, frame):
+    """Handle interrupt signals gracefully"""
+    print("\nReceived interrupt signal, cleaning up...")
+    cleanup_tasks()
+    sys.exit(0)
+
+
 if __name__ == "__main__":
+    # Fix for Windows asyncio subprocess issue
+    if platform.system() == "Windows":
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    
     if len(sys.argv) > 2:
         url = sys.argv[1]
         job_id = sys.argv[2]
