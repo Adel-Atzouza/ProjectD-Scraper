@@ -151,7 +151,7 @@ def stop_scrape():
         # ✅ update progress file
         progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
         if os.path.exists(progress_file):
-            with open(progress_file, "r+") as f:
+            with open(progress_file, "r+", encoding="utf-8") as f:
                 try:
                     data = json.load(f)
                     data["status"] = "stopped"
@@ -172,7 +172,7 @@ def scrape_progress(job_id: str):
     if not os.path.exists(progress_file):
         raise HTTPException(status_code=404, detail="Job not found")
     
-    with open(progress_file, "r") as f:
+    with open(progress_file, "r", encoding="utf-8") as f:
         progress_data = json.load(f)
     
     return JSONResponse(content=progress_data)

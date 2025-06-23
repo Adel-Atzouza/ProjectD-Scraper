@@ -20,8 +20,10 @@ import hashlib
 # Fix for Windows asyncio subprocess issue
 if platform.system() == "Windows":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-    # Suppress ResourceWarnings for unclosed transports
-    warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed transport")
+    # Suppress ResourceWarnings for unclosed transports and subprocesses
+    warnings.filterwarnings("ignore", category=ResourceWarning)
+    warnings.filterwarnings("ignore", message=".*unclosed.*")
+    warnings.filterwarnings("ignore", message=".*I/O operation on closed pipe.*")
 
 
 PROGRESS_FOLDER = "progress"
@@ -76,7 +78,7 @@ async def collect_internal_urls(
                 * 99) if total_estimated else 0
         )
 
-        with open(progress_file, "w") as f:
+        with open(progress_file, "w", encoding="utf-8") as f:
             json.dump({"progress": percent_estimated,
                       "status": "discovering"}, f)
             f.flush()
@@ -106,7 +108,7 @@ async def collect_internal_urls(
                             to_visit.add(norm)
                             discovered.add(norm)
 
-    with open(progress_file, "w") as f:
+    with open(progress_file, "w", encoding="utf-8") as f:
         json.dump({"progress": 99, "status": "discovery done"}, f)
 
     return discovered
@@ -186,7 +188,7 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
                 finally:
                     done_count += 1
                     percent_done = int(99 + (done_count / total_urls))
-                    with open(progress_file, "w") as f:
+                    with open(progress_file, "w", encoding="utf-8") as f:
                         json.dump(
                             {
                                 "progress": percent_done,
@@ -201,7 +203,7 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
                         f.flush()
                         os.fsync(f.fileno())
 
-    with open(progress_file, "w") as f:
+    with open(progress_file, "w", encoding="utf-8") as f:
         json.dump(
             {
                 "progress": 100,
@@ -224,9 +226,10 @@ async def crawl_parallel(urls, max_concurrent, progress_file):
 
 async def run_one_url(url: str, progress_file: str):
     browser_config = BrowserConfig(headless=True)
-    crawler = AsyncWebCrawler(config=browser_config)
-    await crawler.start()
+    crawler = None
     try:
+        crawler = AsyncWebCrawler(config=browser_config)
+        await crawler.start()
         print(f"\n🌐 Crawling site: {url}")
         found_urls = await collect_internal_urls(
             crawler, url, batch_size=MAX_CONCURRENT, progress_file=progress_file
@@ -234,12 +237,21 @@ async def run_one_url(url: str, progress_file: str):
         print(f"🔗 {len(found_urls)} links found for {url}")
         await crawl_parallel(list(found_urls), MAX_CONCURRENT, progress_file)
     finally:
-        await crawler.close()
+        if crawler:
+            try:
+                await crawler.close()
+            except Exception:
+                pass
+        # Force cleanup on Windows
+        if platform.system() == "Windows":
+            await asyncio.sleep(0.1)  # Give time for cleanup
+            import gc
+            gc.collect()
 
 
 def update_progress(job_id, percent, status="running"):
     progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
-    with open(progress_file, "w") as f:
+    with open(progress_file, "w", encoding="utf-8") as f:
         json.dump({"progress": percent, "status": status}, f)
 
 
@@ -251,12 +263,22 @@ def cleanup_tasks():
             # Cancel all pending tasks
             pending = asyncio.all_tasks(loop)
             for task in pending:
-                task.cancel()
+                if not task.done():
+                    task.cancel()
             # Wait for tasks to complete cancellation
             if pending:
                 loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
     except Exception:
         pass
+    
+    # Additional cleanup for Windows
+    if platform.system() == "Windows":
+        try:
+            # Force garbage collection to clean up unclosed resources
+            import gc
+            gc.collect()
+        except Exception:
+            pass
 
 
 def signal_handler(signum, frame):
@@ -271,6 +293,11 @@ if __name__ == "__main__":
     if platform.system() == "Windows":
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     
+    # Set up signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, signal_handler)
+    if platform.system() != "Windows":
+        signal.signal(signal.SIGTERM, signal_handler)
+    
     if len(sys.argv) > 2:
         url = sys.argv[1]
         job_id = sys.argv[2]
@@ -280,6 +307,15 @@ if __name__ == "__main__":
 
         try:
             asyncio.run(run_one_url(url, progress_file))
+        except KeyboardInterrupt:
+            print("\nInterrupted by user")
+            cleanup_tasks()
         except Exception as e:
-            with open(progress_file, "w") as f:
+            with open(progress_file, "w", encoding="utf-8") as f:
                 json.dump({"progress": 100, "status": f"error: {str(e)}"}, f)
+        finally:
+            # Final cleanup with delay for Windows
+            cleanup_tasks()
+            if platform.system() == "Windows":
+                import time
+                time.sleep(0.5)  # Give Windows time to clean up processes
