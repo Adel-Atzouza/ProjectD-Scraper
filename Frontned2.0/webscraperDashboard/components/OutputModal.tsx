@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 type OutputModalProps = {
   isOpen: boolean;
@@ -22,7 +20,6 @@ export default function OutputModal({ isOpen, onClose }: OutputModalProps) {
         .then(r => r.json())
         .then(json => setRuns(json.runs || []));
     } else {
-      // Reset when closed
       setSelectedRun(null);
       setFiles([]);
       setSelectedFile(null);
@@ -61,15 +58,7 @@ export default function OutputModal({ isOpen, onClose }: OutputModalProps) {
           flexDirection: "column"
         }}
       >
-        <div
-          className="modal-header"
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: "10px 20px"
-          }}
-        >
+        <div className="modal-header" style={{ padding: "10px 20px" }}>
           <h3>Available Runs</h3>
         </div>
 
@@ -93,72 +82,60 @@ export default function OutputModal({ isOpen, onClose }: OutputModalProps) {
           ))}
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            flex: 1,
-            overflow: "hidden",
-            borderTop: "1px solid #ddd"
-          }}
-        >
-          <ul
-            style={{
-              width: "20%",
-              margin: 0,
-              padding: "12px",
-              listStyle: "none",
-              overflowY: "auto",
-              borderRight: "1px solid #e5e7eb",
-              background: "#f9fafb"
-            }}
-          >
+        <div style={{ display: "flex", flex: 1, overflow: "hidden", borderTop: "1px solid #ddd" }}>
+          <ul style={{
+            width: "20%",
+            padding: "12px",
+            listStyle: "none",
+            overflowY: "auto",
+            borderRight: "1px solid #e5e7eb",
+            background: "#f9fafb",
+            margin: 0
+          }}>
             {files.map(fname => (
               <li key={fname} style={{ marginBottom: "8px" }}>
                 <button
-                    onClick={() => fetchContent(fname)}
-                    style={{
-                        width: "100%",
-                        textAlign: "left",
-                        background: fname === selectedFile ? "#cce4ff" : "#fff",
-                        color: fname === selectedFile ? "#0b3d91" : "#111827", // ← proper contrast
-                        border: "1px solid #ddd",
-                        padding: "6px",
-                        borderRadius: "6px",
-                        fontWeight: fname === selectedFile ? "600" : "400",
-                        cursor: "pointer"
-                    }}
-                    >
-                    {fname}
-                    </button>
+                  onClick={() => fetchContent(fname)}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    background: fname === selectedFile ? "#cce4ff" : "#fff",
+                    color: fname === selectedFile ? "#0b3d91" : "#111827",
+                    border: "1px solid #ddd",
+                    padding: "6px",
+                    borderRadius: "6px",
+                    fontWeight: fname === selectedFile ? "600" : "400",
+                    cursor: "pointer"
+                  }}
+                >
+                  {fname}
+                </button>
               </li>
             ))}
           </ul>
 
-          <section
-            style={{
-              flex: 1,
-              padding: "12px",
-              overflowY: "auto",
-              background: "#f3f4f6"
-            }}
-          >
+          <section style={{
+            flex: 1,
+            padding: "12px",
+            overflowY: "auto",
+            background: "#f3f4f6"
+          }}>
             {selectedFile && fileContents[selectedFile] ? (
               <>
                 <h4 style={{ marginBottom: "12px" }}>{selectedFile}</h4>
-                <SyntaxHighlighter
-                  language="json"
-                  style={vscDarkPlus}
-                  wrapLines
-                  wrapLongLines
-                  customStyle={{
-                    fontSize: "13px",
-                    borderRadius: "6px",
-                    padding: "16px",
-                    maxHeight: "60vh"
-                  }}
-                >
-                  {JSON.stringify(fileContents[selectedFile], null, 2)}
-                </SyntaxHighlighter>
+                <pre style={{
+                  background: "#1e1e1e",
+                  color: "#d4d4d4",
+                  padding: "16px",
+                  borderRadius: "6px",
+                  fontSize: "13px",
+                  maxHeight: "60vh",
+                  overflowY: "auto",
+                  whiteSpace: "pre-wrap",
+                  wordWrap: "break-word"
+                }}>
+                  <code>{JSON.stringify(fileContents[selectedFile], null, 2)}</code>
+                </pre>
               </>
             ) : selectedFile ? (
               <p>Loading...</p>
@@ -168,13 +145,8 @@ export default function OutputModal({ isOpen, onClose }: OutputModalProps) {
           </section>
         </div>
 
-        <div
-          className="modal-buttons"
-          style={{ padding: "10px 20px", borderTop: "1px solid #e5e7eb" }}
-        >
-          <button className="primary" onClick={onClose}>
-            Close
-          </button>
+        <div className="modal-buttons" style={{ padding: "10px 20px", borderTop: "1px solid #e5e7eb" }}>
+          <button className="primary" onClick={onClose}>Close</button>
         </div>
       </div>
     </div>
