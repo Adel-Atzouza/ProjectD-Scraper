@@ -12,7 +12,7 @@ from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 from crawl4ai.content_filter_strategy import PruningContentFilter
 from utils import is_excluded, clean_text, log_progress
 
-# Configuratie
+
 PROGRESS_FOLDER = os.getenv("PROGRESS_FOLDER", "progress")
 MAX_CONCURRENT = int(os.getenv("MAX_CONCURRENT", 15))
 

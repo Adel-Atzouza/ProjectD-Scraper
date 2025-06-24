@@ -9,20 +9,16 @@ from typing import List
 from pydantic import BaseModel, HttpUrl
 from utils import log_progress
 
-# Configuratie via omgevingsvariabelen
-DB_FILE = os.getenv("DB_FILE", "websites.json")
-PROGRESS_FOLDER = os.getenv("PROGRESS_FOLDER", "progress")
-SCRAPER_SCRIPT = os.getenv("SCRAPER_SCRIPT", "CrawlscraperA.py")
-API_KEY = os.getenv("API_KEY", "my-secret-key")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_FILE = os.path.join(BASE_DIR, "websites.json")
+PROGRESS_FOLDER = "progress"
+SCRAPER_SCRIPT = "CrawlscraperA.py"
 
-# Maak progress folder aan
 os.makedirs(PROGRESS_FOLDER, exist_ok=True)
 
-# Houd lopende processen bij
 running_jobs = {}
 
 
-# Pydantic modellen
 class Website(BaseModel):
     id: int
     url: HttpUrl
@@ -36,7 +32,6 @@ class ScrapeRequest(BaseModel):
     urls: List[HttpUrl]
 
 
-# Database functies
 def load_db(path: str) -> List[dict]:
     if os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
@@ -49,13 +44,10 @@ def save_db(path: str, data: List[dict]):
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
-# Laad database
 db_websites = load_db(DB_FILE)
 
-# Start FastAPI app
 app = FastAPI()
 
-# CORS configuratie
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -65,7 +57,6 @@ app.add_middleware(
 )
 
 
-# Endpoints
 @app.get("/health")
 def health():
     return {"status": "alive"}
@@ -73,7 +64,9 @@ def health():
 
 @app.get("/websites", response_model=List[Website])
 def get_websites():
-    return db_websites
+    #filters website in website.json zonder url
+    valid = [w for w in db_websites if w.get("url")]
+    return valid
 
 
 @app.post("/websites", response_model=Website)
