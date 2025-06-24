@@ -64,7 +64,7 @@ def health():
 
 @app.get("/websites", response_model=List[Website])
 def get_websites():
-    #filters website in website.json zonder url
+    # filters website in website.json zonder url
     valid = [w for w in db_websites if w.get("url")]
     return valid
 
@@ -125,8 +125,10 @@ def get_activity():
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
+                job_id = fname.replace(".json", "")  # Gebruik bestandsnaam als job_id
                 entries.append(
                     {
+                        "job_id": job_id,
                         "url": data.get("url", "Unknown URL"),
                         "status": data.get("status", "unknown"),
                         "progress": data.get("progress", 0),
@@ -139,6 +141,21 @@ def get_activity():
         except Exception:
             continue
     return {"entries": entries}
+
+
+@app.delete("/activity/{job_id}")
+def delete_activity(job_id: str):
+    progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
+    if os.path.exists(progress_file):
+        try:
+            os.remove(progress_file)
+            if job_id in running_jobs:
+                running_jobs[job_id].terminate()
+                del running_jobs[job_id]
+            return {"detail": f"Activity {job_id} deleted"}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to delete: {str(e)}")
+    raise HTTPException(status_code=404, detail="Activity not found")
 
 
 @app.get("/runs")

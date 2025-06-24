@@ -12,9 +12,8 @@ from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 from crawl4ai.content_filter_strategy import PruningContentFilter
 from utils import is_excluded, clean_text, log_progress
 
-
-PROGRESS_FOLDER = os.getenv("PROGRESS_FOLDER", "progress")
-MAX_CONCURRENT = int(os.getenv("MAX_CONCURRENT", 15))
+PROGRESS_FOLDER = "progress"
+MAX_CONCURRENT = 15
 
 
 async def collect_internal_urls(
@@ -35,7 +34,9 @@ async def collect_internal_urls(
 
         total = len(to_visit) + len(visited)
         progress = int((len(visited) / total) * 80) if total else 0
-        log_progress(progress_file, progress, status="discovering", url=start_url)
+        log_progress(
+            progress_file, progress, status="discovering", url=start_url
+        )  # URL consistent doorgeven
 
         tasks = [
             crawler.arun(url, crawl_config, session_id=session_id) for url in batch
@@ -60,7 +61,9 @@ async def collect_internal_urls(
                             to_visit.add(norm)
                             discovered.add(norm)
 
-    log_progress(progress_file, 80, status="discovery done", url=start_url)
+    log_progress(
+        progress_file, 80, status="discovery done", url=start_url
+    )  # URL consistent doorgeven
     return discovered
 
 
@@ -125,14 +128,16 @@ async def crawl_all(urls, max_concurrent, progress_file, start_url):
                         total,
                         success,
                         fail,
-                        url=start_url,
+                        url=start_url,  # URL consistent doorgeven
                     )
 
     for domain, items in results_by_domain.items():
         with open(os.path.join(out_dir, f"{domain}.json"), "w", encoding="utf-8") as f:
             json.dump(items, f, indent=2, ensure_ascii=False)
 
-    log_progress(progress_file, 100, "done", done, total, success, fail, url=start_url)
+    log_progress(
+        progress_file, 100, "done", done, total, success, fail, url=start_url
+    )  # URL consistent doorgeven
 
 
 async def run_scrape(url: str, job_id: str):
@@ -146,7 +151,9 @@ async def run_scrape(url: str, job_id: str):
             )
             await crawl_all(list(links), MAX_CONCURRENT, progress_file, url)
         except Exception as e:
-            log_progress(progress_file, 100, f"error: {str(e)}", url=url)
+            log_progress(
+                progress_file, 100, f"error: {str(e)}", url=url
+            )  # URL consistent doorgeven
             raise
 
 
