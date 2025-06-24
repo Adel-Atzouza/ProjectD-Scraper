@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from typing import List, Union
 from pydantic import BaseModel
+from fastapi.responses import FileResponse
+
 
 DB_FILE = "websites.json"
 PROGRESS_FOLDER = "progress"
@@ -66,12 +68,37 @@ def get_stats():
     total = len(db_websites)
     # For demo: completed = files in progress folder not 'started'; active job count is 0 currently
     completed = sum(1 for fname in os.listdir(PROGRESS_FOLDER)
-                    if json.load(open(os.path.join(PROGRESS_FOLDER, fname)))["status"] == "completed")
+                    if json.load(open(os.path.join(PROGRESS_FOLDER, fname)))["status"] == "done")
     active = sum(1 for fname in os.listdir(PROGRESS_FOLDER)
                  if json.load(open(os.path.join(PROGRESS_FOLDER, fname)))["status"] == "started")
     success_rate = f"{(completed / total * 100):.0f}%" if total > 0 else "0%"
     return {"total":total, "active":active, "completed":completed, "success_rate":success_rate}
 
+
+@app.get("/activity")
+def get_activity():
+    entries = []
+    for fname in os.listdir(PROGRESS_FOLDER):
+        if not fname.endswith(".json"):
+            continue
+        path = os.path.join(PROGRESS_FOLDER, fname)
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                entry = {
+                    "url": data.get("url", "Unknown URL"),
+                    "status": data.get("status", "unknown"),
+                    "progress": data.get("progress", 0),
+                    "done": data.get("done", 0),
+                    "total": data.get("total", 0),
+                    "success": data.get("success", 0),
+                    "failed": data.get("failed", 0),
+                }
+                entries.append(entry)
+        except Exception:
+            continue
+
+    return {"entries": entries}
 
 @app.post("/websites", response_model=Website)
 def add_website(website: WebsiteCreate):
@@ -81,6 +108,12 @@ def add_website(website: WebsiteCreate):
     save_db()
     return new_entry
 
+@app.get("/output/{date}/{filename}")
+def get_output_file(date: str, filename: str):
+    full_path = os.path.join("output", date, filename)
+    if not os.path.isfile(full_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(full_path, media_type="application/json")
 
 @app.delete("/websites")
 def delete_website(url: str):
@@ -133,6 +166,21 @@ def start_scrape(request: ScrapeRequest):
         job_ids.append({"url": url, "job_id": job_id})
 
     return {"jobs": job_ids}
+
+
+@app.get("/runs")
+def list_runs():
+    if not os.path.isdir("output"):
+        return {"runs": []}
+    dates = sorted(os.listdir("output"), reverse=True)
+    return {"runs": dates}
+
+@app.get("/output/{date}")
+def get_output_for_date(date: str):
+    path = os.path.join("output", date)
+    if not os.path.isdir(path):
+        raise HTTPException(404, "Date not found")
+    return {"entries": sorted(os.listdir(path))}
 
 
 @app.post("/stop-scrape")
