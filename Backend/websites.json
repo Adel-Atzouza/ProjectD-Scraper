@@ -4,10 +4,6 @@
     "url": "https://www.sportpuntgouda.nl/"
   },
   {
-    "id": 2,
-    "url": "https://www.bibliotheekgouda.nl/"
-  },
-  {
     "id": 3,
     "url": "https://sociaalteamgouda.nl/"
   },
@@ -18,5 +14,121 @@
   {
     "id": 6,
     "url": "https://books.toscrape.com/"
+  },
+  {
+    "id": 7,
+    "url": "https://example.com"
+  },
+  {
+    "id": 8,
+    "url": ""
+  },
+  {
+    "id": 9,
+    "url": "https://duplicate.com"
+  },
+  {
+    "id": 10,
+    "url": "https://duplicate.com"
+  },
+  {
+    "id": 11,
+    "url": "https://delete-me.com"
+  },
+  {
+    "id": 12,
+    "url": "https://scrape-me.com"
+  },
+  {
+    "id": 13,
+    "url": "https://track-me.com"
+  },
+  {
+    "id": 14,
+    "url": "https://example.com"
+  },
+  {
+    "id": 15,
+    "url": ""
+  },
+  {
+    "id": 16,
+    "url": "https://duplicate.com"
+  },
+  {
+    "id": 17,
+    "url": "https://duplicate.com"
+  },
+  {
+    "id": 18,
+    "url": "https://delete-me.com"
+  },
+  {
+    "id": 19,
+    "url": "https://scrape-me.com"
+  },
+  {
+    "id": 20,
+    "url": "https://track-me.com"
+  },
+  {
+    "id": 21,
+    "url": "https://tarifiyt.com/"
+  },
+  {
+    "id": 22,
+    "url": "https://example.com"
+  },
+  {
+    "id": 23,
+    "url": ""
+  },
+  {
+    "id": 24,
+    "url": "https://duplicate.com"
+  },
+  {
+    "id": 25,
+    "url": "https://duplicate.com"
+  },
+  {
+    "id": 26,
+    "url": "https://delete-me.com"
+  },
+  {
+    "id": 27,
+    "url": "https://scrape-me.com"
+  },
+  {
+    "id": 28,
+    "url": "https://track-me.com"
+  },
+  {
+    "id": 29,
+    "url": "https://example.com"
+  },
+  {
+    "id": 30,
+    "url": ""
+  },
+  {
+    "id": 31,
+    "url": "https://duplicate.com"
+  },
+  {
+    "id": 32,
+    "url": "https://duplicate.com"
+  },
+  {
+    "id": 33,
+    "url": "https://delete-me.com"
+  },
+  {
+    "id": 34,
+    "url": "https://scrape-me.com"
+  },
+  {
+    "id": 35,
+    "url": "https://track-me.com"
   }
 ]

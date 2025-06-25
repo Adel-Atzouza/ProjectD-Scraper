@@ -1,5 +1,3 @@
-import React from "react";
-
 export interface WebsiteCardProps {
   url: string;
   lastScraped?: string;
@@ -29,7 +27,7 @@ export default function WebsiteCard({
   return (
     <div className="website-card">
       <div className="website-details">
-        <div className="logo-icon">🌐</div>
+        <div className="website-icon">🌐</div>
         <div className="website-info">
           <p>{url}</p>
           <div>

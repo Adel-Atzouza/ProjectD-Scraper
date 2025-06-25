@@ -39,8 +39,23 @@ header {
   justify-content: center;
   align-items: center;
   border-radius: 8px;
+  
   margin-right: 12px;
 }
+.website-icon {
+  background: #3b82f6;
+  border: 1px solid #0a3077;
+  color: white;
+  width: 34px;
+  height: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  
+  margin-right: 12px;
+}
+
 
 button {
   transition: box-shadow 0.2s ease;
@@ -103,6 +118,7 @@ button.primary svg {
 
 .stat-icon {
   background: #dbeafe;
+  border: 1px solid #3b82f6;
   border-radius: 8px;
   padding: 10px;
   font-size: 16px;
@@ -136,6 +152,20 @@ button.primary svg {
   margin-bottom: 20px;
 }
 
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.activity-list li {
+  padding: 12px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
 .website-list {
   display: flex;
   flex-direction: column;
@@ -143,7 +173,7 @@ button.primary svg {
 }
 
 .website-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid #cfcbcb;
   border-radius: 8px;
   padding: 16px;
   display: flex;
@@ -176,13 +206,6 @@ button.primary svg {
   color: #6b7280;
 }
 
-.badge {
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 9999px;
-  display: inline-block;
-  margin-right: 8px;
-}
 
 .card-actions {
   display: flex;
@@ -208,24 +231,33 @@ button.primary svg {
 
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0,0,0,0.5);
+  top: 0; left: 0;
+  right: 0; bottom: 0;
+  background-color: rgba(0, 0, 0, 0.3);
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 999;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 16px;
 }
 
 .modal {
-  background: white;
-  padding: 24px;
-  border-radius: 12px;
-  width: 300px;
-  text-align: center;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+  background: #ffffff;
+  padding: 32px;
+  border-radius: 16px;
+  width: 700px; /* wider modal */
+  max-width: 95%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease;
 }
 
 .modal-buttons {
@@ -298,44 +330,98 @@ button.primary svg {
 }
 
 .progress-bar {
-  height: 6px;
-  background-color: #e5e7eb;
-  border-radius: 3px;
-  margin-top: 8px;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
   overflow: hidden;
+  margin: 8px 0;
 }
-
 .progress-fill {
   height: 100%;
   background-color: #3b82f6;
-  transition: width 0.4s ease;
+  transition: width 0.3s ease;
 }
 
-
-.progress-bar {
-  height: 6px;
-  background-color: #e5e7eb;
-  border-radius: 3px;
-  margin-top: 8px;
-  overflow: hidden;
-  border: 1px solid #000000;
+.runs-list, .files-list {
+  width: 15%;
+  overflow-y: auto;
+  background: #f9fafb;
+  border-right: 1px solid #e5e7eb;
 }
 
-.progress-fill {
-  height: 100%;
-  background-color: #3b82f6;
-  transition: width 0.4s ease;
-  
+.runs-item, .files-item {
+  padding: 12px;
+  cursor: pointer;
+  font-family: sans-serif;
+}
+
+.runs-item.selected, .files-item.selected {
+  background: #dbedff;
+  color: #0b4a8a;
+  font-weight: 500;
+}
+
+.json-preview {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  background: #f3f4f6;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.badge {
+  background-color: #0284c7; 
+  color: #001a5a;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.badge.starting {
+  background-color: #fef3c7;
+  color: #b45309;
+  border-color: #000000;
+}
+
+.badge.discovering {
+  background-color: #aec2db;
+  color: #2563eb;
+  border-color: #000000;
+}
+
+.badge.done {
+  background-color: #a8cfb6;
+  color: #15803d;
+  border-color: #000000;
+}
+
+.badge.stopped {
+  background-color: #cc9e9e;
+  color: #b91c1c;
+  border-color: #000000;
+}
+
+.badge-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.badge.selected {
+  background-color: #0284c7; /* very light blue when selected */
+  font-weight: 600;
+  border: 2px solid #fafafa;
 }
 
 .badge.idle {
   background-color: #f3f4f6;
   color: #6b7280;
-}
-
-.badge.discovering {
-  background-color: #dbeafe;
-  color: #2563eb;
 }
 
 .badge.scraping {
@@ -392,7 +478,9 @@ button.primary svg {
 }
 
 .modal h3 {
-  margin-bottom: 12px;
+  font-size: 1.25rem;
+  margin-bottom: 20px;
+  color: #1f2937; /* darker text */
 }
 
 .modal input[type="text"] {
@@ -410,10 +498,21 @@ button.primary svg {
   margin: 4px 0 8px 0;
 }
 
-.modal-buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+.modal-buttons button,
+.modal button.primary {
+  padding: 10px 20px;
+  font-size: 14px;
+  border-radius: 8px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-buttons button:hover,
+.modal button.primary:hover {
+  background-color: #2563eb;
 }
 
 /* White checkbox with border */
@@ -437,9 +536,12 @@ button.primary:active { transform: translateY(2px); }
 .toast {
   position: fixed; top: 24px; right: 24px;
   padding: 12px 16px; background: #f3f4f6;
+  transform: translateX(-50%);
   border-radius: 6px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   font-weight: 500;
   border: 1px solid #3b82f6;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+  animation: slideFade 0.3s ease-out;
 }
 .toast.success { border-left: 4px solid #10b981; }
 .toast.info { border-left: 4px solid #3b82f6; }
@@ -451,4 +553,196 @@ button.primary:active { transform: translateY(2px); }
   font-size: 16px;
 }
 
+.output-modal {
+  width: 90vw;
+  max-width: 1200px;
+  height: 80vh;
+  background: white;
+  border-radius: 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
+.output-modal .modal-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.output-modal h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.output-grid {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.output-list {
+  flex: 1 0 25%;
+  max-width: 25%;
+  background: #f9fafb;
+  border-right: 1px solid #e5e7eb;
+  overflow-y: auto;
+}
+
+.output-list button {
+  display: block;
+  color: #6d0341;
+  width: 100%;
+  padding: 10px 16px;
+  text-align: left;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.output-list button:hover {
+  background-color: #e5e7eb;
+}
+
+.output-list button.selected {
+  background-color: #ac9513;
+  color: #0b3d91;
+  font-weight: 600;
+  border-left: 4px solid #3b82f6;
+}
+
+.output-detail {
+  flex: 3;
+  padding: 16px;
+  background: #f3f4f6;
+  overflow-y: auto;
+}
+
+.output-detail h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.output-detail pre {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 14px;
+  overflow-x: auto;
+  max-height: calc(100% - 40px);
+}
+
+.activity-modal {
+  width: 80vw;
+  max-width: 1000px;
+  height: 70vh;
+  max-height: 75vh;
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.activity-modal h3 {
+  margin-bottom: 16px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+
+.run-buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.run-buttons button {
+  background: #e0efff; border: none; padding: 6px 10px; border-radius: 6px;
+}
+.run-buttons button.active { background: #3b82f6; color: white; }
+
+.file-list { max-height: 200px; overflow-y: auto; padding: 0; list-style: none; margin: 12px 0; }
+.file-list li, .activity-list li { margin-bottom: 8px; }
+
+.status-stopped { color: #f59e0b; font-weight: bold; }
+.status-done { color: #10b981; font-weight: bold; }
+.status-error { color: #dc2626; font-weight: bold; }
+
+.activity-list li {
+  border-bottom: 1px solid #f3f4f6;
+  padding: 12px 0;
+}
+
+.activity-list li strong {
+  color: #111827;
+}
+
+.activity-list .progress-bar {
+  margin-top: 6px;
+  height: 6px;
+  background-color: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid #000000;
+}
+
+.activity-list .progress-fill {
+  height: 100%;
+  background-color: #3b82f6;
+  transition: width 0.4s ease;
+}
+
+/* Applies to whole page */
+*::-webkit-scrollbar {
+  width: 12px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #f9fafb; /* very light gray */
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #3b82f6;  /* light gray */
+  border-radius: 0px;         /* ← makes it square */
+  border: 2px solid #000000;  /* padding-like look */
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #9ca3af;  /* darker gray on hover */
+}
+
+.website-row input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background-color: #fff;
+  border: 2px solid #3171d1; /* Light gray border */
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-block;
+  position: relative;
+}
+
+.website-row input[type="checkbox"]:checked {
+  background-color: #3b82f6; /* Blue background when checked */
+  border-color: #3b82f6;
+}
+
+.website-row input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  width: 4px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
