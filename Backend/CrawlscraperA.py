@@ -13,7 +13,6 @@ from crawl4ai.content_filter_strategy import PruningContentFilter
 from utils import is_excluded, clean_text, log_progress
 import hashlib
 
-
 PROGRESS_FOLDER = "progress"
 MAX_CONCURRENT = 15
 
@@ -83,7 +82,7 @@ async def crawl_all(urls, max_concurrent, progress_file, start_url):
         ),
     )
 
-    results_by_domain = defaultdict(dict)
+    results_by_domain = defaultdict(list)
     total = len(urls)
     done = 0
     success = 0
@@ -104,22 +103,9 @@ async def crawl_all(urls, max_concurrent, progress_file, start_url):
                     if isinstance(task, Exception):
                         raise task
                     res = task
-
-                    domain = urlparse(url).netloc
-                    output_filepath = os.path.join(out_dir, f"{domain}.json")
-
-                    if os.path.exists(output_filepath):
-                        with open(output_filepath, "r", encoding="utf-8") as f:
-                            existing_data = json.load(f)
-                            if url in existing_data:
-                                if existing_data[url]["hash"] == hashlib.sha256(
-                                    res.markdown.encode()).hexdigest():
-                                    print(f"🔄 {url} al verwerkt, overslaan")
-                                    continue
-
                     if res.success and res.markdown.fit_markdown:
                         summary = clean_text(res.markdown.fit_markdown)
-                        
+                        domain = urlparse(url).netloc
                         results_by_domain[domain].append(
                             {
                                 "url": url,
@@ -160,7 +146,6 @@ async def run_scrape(url: str, job_id: str):
     progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
     log_progress(progress_file, 0, "starting", url=url)
 
-
     async with AsyncWebCrawler(config=BrowserConfig(headless=True)) as crawler:
         try:
             links = await collect_internal_urls(
@@ -174,5 +159,6 @@ async def run_scrape(url: str, job_id: str):
             raise
 
 
-def main(url: str, job_id: str):
-    asyncio.run(run_scrape(url, job_id))
+if __name__ == "__main__":
+    if len(sys.argv) == 3:
+        asyncio.run(run_scrape(sys.argv[1], sys.argv[2]))
