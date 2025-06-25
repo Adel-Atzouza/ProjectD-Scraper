@@ -30,6 +30,7 @@ def log_progress(
     success: int = 0,
     failed: int = 0,
     url: str = "",
+    timestamp: datetime = None,
 ):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(

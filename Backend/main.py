@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from pydantic import BaseModel, HttpUrl
 from utils import log_progress
+from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(BASE_DIR, "websites.json")
@@ -136,6 +137,7 @@ def get_activity():
                         "total": data.get("total", 0),
                         "success": data.get("success", 0),
                         "failed": data.get("failed", 0),
+                        "timestamp": data.get("timestamp", "Unknown time"),
                     }
                 )
         except Exception:
@@ -192,7 +194,13 @@ def start_scrape(request: ScrapeRequest):
         job_id = str(uuid.uuid4())
         progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
 
-        log_progress(progress_file, 0, "starting", url=str(url))
+        log_progress(
+            progress_file,
+            0,
+            "starting",
+            url=str(url),
+            timestamp=datetime.utcnow().isoformat() + "Z"
+        )
 
         try:
             proc = subprocess.Popen(["python", SCRAPER_SCRIPT, str(url), job_id])

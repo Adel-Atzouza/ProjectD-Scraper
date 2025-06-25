@@ -51,7 +51,7 @@ jobs:
 
     steps:
       - name: Notify Discord on success
-        if: ${{ success() }}
+        if: needs.test.result == 'success'
         uses: appleboy/discord-action@master
         with:
           webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
@@ -59,7 +59,7 @@ jobs:
           message: "✅ CI/CD pipeline geslaagd voor ${{ github.repository }}!"
 
       - name: Notify Discord on failure
-        if: ${{ failure() }}
+        if: needs.test.result == 'failure'
         uses: appleboy/discord-action@master
         with:
           webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
