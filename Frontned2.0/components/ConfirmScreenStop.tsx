@@ -1,5 +1,4 @@
-// src/components/ConfirmModal.tsx
-import React from 'react';
+// src/components/ConfirmScreenStop.tsx
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -13,10 +12,10 @@ export default function ConfirmModal({ isOpen, onCancel, onConfirm }: ConfirmMod
   return (
     <div className="modal-backdrop">
       <div className="modal">
-        <h3>⚠️ Confirm Deletion</h3>
-        <p>Are you sure you want to delete this website?</p>
+        <h3>⚠️ Confirm Action</h3>
+        <p>Are you sure you want to stop scraping</p>
         <div className="modal-buttons">
-          <button className="confirm" onClick={onConfirm}>Yes, Delete</button>
+          <button className="danger" onClick={onConfirm}>Yes, Stop</button>
           <button onClick={onCancel}>Cancel</button>
         </div>
       </div>

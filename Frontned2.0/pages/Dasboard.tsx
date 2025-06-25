@@ -6,7 +6,7 @@ import ConfirmModal from "../components/ConfirmScreen";
 import AddWebsiteModal from "../components/AddWebsitePopup";
 import OutputModal from "../components/OutputModal";
 import ActivityModal from "../components/ActivityModal";
-import { error } from "console";
+import ConfirmScreenStop from "../components/ConfirmScreenStop";
 
 interface Website {
   id: number;
@@ -31,6 +31,7 @@ type ProgressStatus = {
 };
 
 type ActivityEntry = {
+  job_id: string;
   url: string;
   status: string;
   progress: number;
@@ -38,6 +39,7 @@ type ActivityEntry = {
   total?: number;
   success?: number;
   failed?: number;
+  timestamp?: string;
 };
 
 const API = "http://127.0.0.1:8000";
@@ -65,18 +67,36 @@ export default function Dashboard() {
   const [outputOpen, setOutputOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
 
+  const [activityEntries, setActivityEntries] = useState<ActivityEntry[]>([]);
+
+  function getLatestScraped(url: string): string | undefined {
+    // Only finished jobs with timestamps
+    const jobs = activityEntries.filter(
+      (e) =>
+        e.url.replace(/\/$/, "") === url.replace(/\/$/, "") &&
+        e.status === "done" &&
+        !!e.timestamp
+    );
+    if (!jobs.length) return undefined;
+    jobs.sort((a, b) => new Date(b.timestamp!).getTime() - new Date(a.timestamp!).getTime());
+    return jobs[0].timestamp;
+  }
+
   const showToast = (msg: string, duration = 3000) => {
     setToast(msg);
     setTimeout(() => setToast(null), duration);
   };
 
   const loadData = async () => {
-    const [wRes, sRes] = await Promise.all([
+    const [wRes, sRes, aRes] = await Promise.all([
       fetch(`${API}/websites`),
       fetch(`${API}/stats`),
+      fetch(`${API}/activity`),
     ]);
     setWebsites(await wRes.json());
     setStats(await sRes.json());
+    const activityJson = await aRes.json();
+  setActivityEntries(activityJson.entries ?? []);
   };
 
   useEffect(() => {
@@ -144,6 +164,7 @@ export default function Dashboard() {
         clearInterval(interval);
         setPollInterval(null);
         setScrapingStarted(false);
+        loadData();
       }
     }, 2000);
 
@@ -291,6 +312,7 @@ export default function Dashboard() {
                 />
                 <WebsiteCard
                   url={w.url}
+                  lastScraped={getLatestScraped(w.url)}   // <--- new prop!
                   onDelete={() => {
                     setDeleteId(w.id);
                     setConfirmOpen(true);
@@ -314,7 +336,7 @@ export default function Dashboard() {
         onConfirm={handleDelete}
       />
 
-      <ConfirmModal
+      <ConfirmScreenStop
         isOpen={stopConfirmOpen}
         onCancel={() => setStopConfirmOpen(false)}
         onConfirm={confirmStop}
