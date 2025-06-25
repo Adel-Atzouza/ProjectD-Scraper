@@ -29,21 +29,38 @@ type ProgressStatus = {
   failed: number;
 };
 
+type ActivityEntry = {
+  url: string;
+  status: string;
+  progress: number;
+  done?: number;
+  total?: number;
+  success?: number;
+  failed?: number;
+};
+
 const API = "http://127.0.0.1:8000";
 
 export default function Dashboard() {
   const [websites, setWebsites] = useState<Website[]>([]);
-  const [stats, setStats] = useState<Stats>({ total: 0, active: 0, completed: 0, success_rate: "0%" });
+  const [stats, setStats] = useState<Stats>({
+    total: 0,
+    active: 0,
+    completed: 0,
+    success_rate: "0%",
+  });
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [stopConfirmOpen, setStopConfirmOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
-  const [progressMap, setProgressMap] = useState<Record<string, ProgressStatus>>({});
+  const [progressMap, setProgressMap] = useState<
+    Record<string, ProgressStatus>
+  >({});
   const [scrapingStarted, setScrapingStarted] = useState(false);
   const [pollInterval, setPollInterval] = useState<NodeJS.Timeout | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [stuck, setStuck] = useState(false);
-
   const [outputOpen, setOutputOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
 
@@ -55,7 +72,7 @@ export default function Dashboard() {
   const loadData = async () => {
     const [wRes, sRes] = await Promise.all([
       fetch(`${API}/websites`),
-      fetch(`${API}/stats`)
+      fetch(`${API}/stats`),
     ]);
     setWebsites(await wRes.json());
     setStats(await sRes.json());
@@ -111,7 +128,9 @@ export default function Dashboard() {
               allStopped = false;
             }
           }
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
 
         if (updatedMap[url].status === "stopped") {
           setStuck(true);
@@ -130,38 +149,60 @@ export default function Dashboard() {
     setPollInterval(interval);
   };
 
-  const handleStop = async () => {
+  const handleStop = () => {
+    setStopConfirmOpen(true);
+  };
+
+  const confirmStop = async () => {
     if (pollInterval) {
       clearInterval(pollInterval);
       setPollInterval(null);
     }
 
-    await fetch(`${API}/stop-scrape`, { method: "POST" });
+    try {
+      const res = await fetch(`${API}/stop-scrape`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed to stop scraping");
 
-    setTimeout(() => {
       setScrapingStarted(false);
       showToast("🛑 Scraping stopped");
-      setProgressMap(prev => {
+      setProgressMap((prev) => {
         const pv = { ...prev };
-        selected.forEach(url => {
+        selected.forEach((url) => {
           if (pv[url]?.status !== "done") {
             pv[url] = { ...pv[url], status: "stopped", progress: 0 };
           }
         });
         return pv;
       });
-    }, 1500);
-    loadData();
+
+      // Sync with /activity
+      const r = await fetch(`${API}/activity`);
+      if (r.ok) {
+        const { entries } = await r.json();
+        const updatedMap = { ...progressMap };
+        entries.forEach((e: ActivityEntry) => {
+          if (updatedMap[e.url]) {
+            updatedMap[e.url] = { ...updatedMap[e.url], ...e };
+          }
+        });
+        setProgressMap(updatedMap);
+      }
+
+      setStopConfirmOpen(false);
+      loadData();
+    } catch (err) {
+      showToast(`❌ Error stopping scrape: ${err.message}`, 5000);
+    }
   };
 
   const toggleSelect = (url: string) =>
-    setSelected(prev =>
-      prev.includes(url) ? prev.filter(u => u !== url) : [...prev, url]
+    setSelected((prev) =>
+      prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
     );
 
   const toggleSelectAll = () =>
-    setSelected(prev =>
-      prev.length === websites.length ? [] : websites.map(w => w.url)
+    setSelected((prev) =>
+      prev.length === websites.length ? [] : websites.map((w) => w.url)
     );
 
   const handleDelete = async () => {
@@ -178,32 +219,64 @@ export default function Dashboard() {
       <Header />
       <main className="main">
         {toast && <div className="toast success">{toast}</div>}
-        {stuck && <div className="toast error">⚠️ Scrape status may be stuck. Please refresh the page.</div>}
+        {stuck && (
+          <div className="toast error">
+            ⚠️ Scrape status may be stuck. Please refresh the page.
+          </div>
+        )}
 
         <div className="stats">
-          <StatCard label="Total Websites" value={`${stats.total}`} icon="globe" />
-          <StatCard label="Active Scrapes" value={`${stats.active}`} icon="play" />
-          <StatCard label="Completed" value={`${stats.completed}`} icon="check" />
-          <StatCard label="Success Rate" value={stats.success_rate} icon="chart" />
+          <StatCard
+            label="Total Websites"
+            value={`${stats.total}`}
+            icon="globe"
+          />
+          <StatCard
+            label="Active Scrapes"
+            value={`${stats.active}`}
+            icon="play"
+          />
+          <StatCard
+            label="Completed"
+            value={`${stats.completed}`}
+            icon="check"
+          />
+          <StatCard
+            label="Success Rate"
+            value={stats.success_rate}
+            icon="chart"
+          />
         </div>
 
         <section className="website-section">
           <h2 style={{ textAlign: "center" }}>Websites</h2>
           <div className="website-header">
-            <button className="primary" onClick={() => setAddModalOpen(true)}>Add Website</button>
-            <button className="primary" onClick={() => setOutputOpen(true)}>View Output</button>
-            <button className="primary" onClick={() => setActivityOpen(true)}>View Activity</button>
-            <button className="primary" onClick={toggleSelectAll}>Select All</button>
-            
+            <button className="primary" onClick={() => setAddModalOpen(true)}>
+              Add Website
+            </button>
+            <button className="primary" onClick={() => setOutputOpen(true)}>
+              View Output
+            </button>
+            <button className="primary" onClick={() => setActivityOpen(true)}>
+              View Activity
+            </button>
+            <button className="primary" onClick={toggleSelectAll}>
+              Select All
+            </button>
+
             {!scrapingStarted ? (
-              <button className="primary" onClick={handleStart}>Start Scraping</button>
+              <button className="primary" onClick={handleStart}>
+                Start Scraping
+              </button>
             ) : (
-              <button className="primary danger" onClick={handleStop}>Stop Scraping</button>
+              <button className="primary danger" onClick={handleStop}>
+                Stop Scraping
+              </button>
             )}
           </div>
 
           <div className="website-list">
-            {websites.map(w => (
+            {websites.map((w) => (
               <div className="website-row" key={w.id}>
                 <input
                   type="checkbox"
@@ -236,16 +309,19 @@ export default function Dashboard() {
         onConfirm={handleDelete}
       />
 
+      <ConfirmModal
+        isOpen={stopConfirmOpen}
+        onCancel={() => setStopConfirmOpen(false)}
+        onConfirm={confirmStop}
+      />
+
       <AddWebsiteModal
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}
         onAdd={loadData}
       />
 
-      <OutputModal
-        isOpen={outputOpen}
-        onClose={() => setOutputOpen(false)}
-      />
+      <OutputModal isOpen={outputOpen} onClose={() => setOutputOpen(false)} />
 
       <ActivityModal
         isOpen={activityOpen}

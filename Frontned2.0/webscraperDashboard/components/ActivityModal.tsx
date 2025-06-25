@@ -9,6 +9,7 @@ type ActivityEntry = {
   total?: number;
   success?: number;
   failed?: number;
+  job_id: string;
 };
 
 const API = "http://127.0.0.1:8000";
@@ -17,14 +18,37 @@ export default function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetch(`${API}/activity`)
-        .then(r => { if (!r.ok) throw new Error("Failed to load activity"); return r.json() })
-        .then(json => { setEntries(json.entries ?? []); setError(null) })
-        .catch(err => setError(err.message));
+  const fetchActivity = async () => {
+    try {
+      const r = await fetch(`${API}/activity`);
+      if (!r.ok) throw new Error("Failed to load activity");
+      const json = await r.json();
+      setEntries(json.entries ?? []);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
     }
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    fetchActivity();
+    const interval = setInterval(fetchActivity, 2000);
+    return () => clearInterval(interval);
   }, [isOpen]);
+
+  const handleDelete = async (jobId: string) => {
+    try {
+      await fetch(`${API}/activity/${encodeURIComponent(jobId)}`, {
+        method: "DELETE",
+      });
+      fetchActivity(); 
+    } catch (err) {
+      console.error("Error deleting activity:", err);
+      setError("Failed to delete activity");
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -43,7 +67,6 @@ export default function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
           <h3>Scrape Activity</h3>
         </div>
 
-        {/* Expanded scrollable container */}
         <div
           style={{
             flex: 1,
@@ -51,10 +74,27 @@ export default function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
             padding: "16px",
           }}
         >
-          {error && <p style={{ color: "red" }}>{error}</p>}
+          {error && (
+            <div
+              style={{
+                color: "red",
+                display: "flex",
+                gap: "8px",
+                alignItems: "center",
+              }}
+            >
+              <p>{error}</p>
+              <button className="primary" onClick={fetchActivity}>
+                Retry
+              </button>
+            </div>
+          )}
           {!error && entries.length === 0 && <p>No activity available.</p>}
 
-          <ul className="activity-list" style={{ width: "100%", margin: 0, padding: 0 }}>
+          <ul
+            className="activity-list"
+            style={{ width: "100%", margin: 0, padding: 0 }}
+          >
             {entries.map((e, i) => (
               <li
                 key={i}
@@ -69,10 +109,18 @@ export default function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
                   listStyle: "none",
                 }}
               >
-                <div style={{ fontWeight: 500, marginBottom: "6px", wordBreak: "break-all", }}>
-                  {e.url || "Unknown URL"}
+                <div
+                  style={{
+                    fontWeight: 500,
+                    marginBottom: "6px",
+                    wordBreak: "break-all",
+                  }}
+                >
+                  {e.url || `Job ID: ${e.job_id}`} {}
                 </div>
-                <span className={`badge ${e.status.toLowerCase()}`}>{e.status}</span>
+                <span className={`badge ${e.status.toLowerCase()}`}>
+                  {e.status}
+                </span>
 
                 {typeof e.progress === "number" && (
                   <>
@@ -86,18 +134,36 @@ export default function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
                       />
                     </div>
                     <small>
-                      Progress: {e.done ?? 0}/{e.total ?? 0} items<br />
-                      ✅ Success: {e.success ?? 0} | ❌ Failed: {e.failed ?? 0}
+                      Progress: {e.done ?? 0}/{e.total ?? 0} items
+                      <br />✅ Success: {e.success ?? 0} | ❌ Failed:{" "}
+                      {e.failed ?? 0}
                     </small>
                   </>
                 )}
+                <button
+                  onClick={() => handleDelete(e.job_id)}
+                  style={{
+                    backgroundColor: "#ff4444",
+                    color: "white",
+                    padding: "5px 10px",
+                    border: "none",
+                    borderRadius: "3px",
+                    marginTop: "12px",
+                    marginLeft: "auto",
+                    display: "block", 
+                  }}
+                >
+                  Delete
+                </button>
               </li>
             ))}
           </ul>
         </div>
 
         <div className="modal-buttons">
-          <button className="primary" onClick={onClose}>Close</button>
+          <button className="primary" onClick={onClose}>
+            Close
+          </button>
         </div>
       </div>
     </div>
