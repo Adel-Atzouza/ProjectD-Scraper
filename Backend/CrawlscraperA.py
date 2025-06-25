@@ -106,30 +106,41 @@ async def crawl_all(urls, max_concurrent, progress_file, start_url):
                     if res.success and res.markdown.fit_markdown:
                         summary = clean_text(res.markdown.fit_markdown)
 
-                        output_file = os.path.join(out_dir, f"{urlparse(url).netloc}.json")
+                        domain = urlparse(url).netloc
+
+                        output_file = os.path.join("hashes.json")
                         if os.path.exists(output_file):
                             with open(output_file, "r", encoding="utf-8") as f:
                                 existing_data = json.load(f)
 
-                                for item in existing_data:
-                                    if item["url"] == url and item["hash"] == hashlib.sha256(summary.encode()).hexdigest():
-                                        print(f"Skipping {url} - already exists")
-                                        should_skip = True
-                                        break
-                                
-                                if should_skip:
-                                    continue
+                                if domain in existing_data:
+                                    if url in existing_data[domain]:
+                                        if existing_data[domain][url]["hash"] == hashlib.sha256(summary.encode()).hexdigest():
+                                            print(f"Skipping {url} - already exists")
+                                            continue
 
                         
-                        domain = urlparse(url).netloc
                         results_by_domain[domain].append(
                             {
                                 "url": url,
                                 "titel": url.rstrip("/").split("/")[-1] or domain,
                                 "samenvatting": summary,
-                                "hash": hashlib.sha256(summary.encode()).hexdigest(),
                             }
                         )
+
+                        with open("hashes.json", "r", encoding="utf-8") as f:
+                            existing_data = json.load(f)
+                        
+                        with open("hashes.json", "w", encoding="utf-8") as f:
+                            if domain not in existing_data:
+                                existing_data[domain] = {}
+                            
+                            existing_data[domain][url] = {
+                                "hash": hashlib.sha256(summary.encode()).hexdigest(),
+                                "timestamp": datetime.now().isoformat(),
+                            }
+                            
+                            json.dump(existing_data, f, indent=2, ensure_ascii=False)
                         success += 1
                     else:
                         fail += 1
