@@ -9,7 +9,7 @@ type ActivityEntry = {
   total?: number;
   success?: number;
   failed?: number;
-  job_id: string; // Toegevoegd om job_id te herkennen
+  job_id: string;
 };
 
 const API = "http://127.0.0.1:8000";
@@ -43,7 +43,7 @@ export default function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
       await fetch(`${API}/activity/${encodeURIComponent(jobId)}`, {
         method: "DELETE",
       });
-      fetchActivity(); // Vernieuw de lijst na verwijderen
+      fetchActivity(); 
     } catch (err) {
       console.error("Error deleting activity:", err);
       setError("Failed to delete activity");
@@ -116,7 +116,7 @@ export default function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
                     wordBreak: "break-all",
                   }}
                 >
-                  {e.url || `Job ID: ${e.job_id}`} {/* Fallback naar job_id */}
+                  {e.url || `Job ID: ${e.job_id}`} {}
                 </div>
                 <span className={`badge ${e.status.toLowerCase()}`}>
                   {e.status}
@@ -148,7 +148,9 @@ export default function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
                     padding: "5px 10px",
                     border: "none",
                     borderRadius: "3px",
-                    marginTop: "8px",
+                    marginTop: "12px",
+                    marginLeft: "auto",
+                    display: "block", 
                   }}
                 >
                   Delete
