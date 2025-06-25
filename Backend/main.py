@@ -249,7 +249,6 @@ def stop_scrape():
         progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
         if os.path.exists(progress_file):
             with open(progress_file, "r+", encoding="utf-8") as f:
-            with open(progress_file, "r+", encoding="utf-8") as f:
                 try:
                     data = json.load(f)
                     data["status"] = "stopped"
