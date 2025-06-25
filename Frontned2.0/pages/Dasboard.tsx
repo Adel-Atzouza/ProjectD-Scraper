@@ -213,7 +213,11 @@ export default function Dashboard() {
       setStopConfirmOpen(false);
       loadData();
     } catch (err) {
-      showToast(`❌ Error stopping scrape: ${err.message}`, 5000);
+      const errorMsg =
+        err && typeof err === "object" && "message" in err
+          ? (err as { message: string }).message
+          : String(err);
+      showToast(`❌ Error stopping scrape: ${errorMsg}`, 5000);
     }
   };
 
