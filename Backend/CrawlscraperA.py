@@ -174,6 +174,5 @@ async def run_scrape(url: str, job_id: str):
             raise
 
 
-if __name__ == "__main__":
-    if len(sys.argv) == 3:
-        asyncio.run(run_scrape(sys.argv[1], sys.argv[2]))
+def main(url: str, job_id: str):
+    asyncio.run(run_scrape(url, job_id))

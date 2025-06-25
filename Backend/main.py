@@ -1,18 +1,19 @@
 import os
 import json
 import uuid
-import subprocess
 from fastapi import FastAPI, HTTPException
 from starlette.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from pydantic import BaseModel, HttpUrl
 from utils import log_progress
+from threading import Thread
+
+import CrawlscraperA
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(BASE_DIR, "websites.json")
 PROGRESS_FOLDER = "progress"
-SCRAPER_SCRIPT = "CrawlscraperA.py"
 
 os.makedirs(PROGRESS_FOLDER, exist_ok=True)
 
@@ -150,7 +151,8 @@ def delete_activity(job_id: str):
         try:
             os.remove(progress_file)
             if job_id in running_jobs:
-                running_jobs[job_id].terminate()
+                # Note: Threads can't be forcefully terminated like processes
+                # The thread will continue running but we remove it from tracking
                 del running_jobs[job_id]
             return {"detail": f"Activity {job_id} deleted"}
         except Exception as e:
@@ -185,6 +187,10 @@ def get_output_file(date: str, filename: str):
 @app.post("/start-scrape")
 def start_scrape(request: ScrapeRequest):
     job_ids = []
+
+    def run_scraper(url, job_id):
+        CrawlscraperA.main(url, job_id)
+
     for url in request.urls:
         if not any(w["url"].rstrip("/") == str(url).rstrip("/") for w in db_websites):
             raise HTTPException(status_code=400, detail=f"URL not in database: {url}")
@@ -195,8 +201,9 @@ def start_scrape(request: ScrapeRequest):
         log_progress(progress_file, 0, "starting", url=str(url))
 
         try:
-            proc = subprocess.Popen(["python", SCRAPER_SCRIPT, str(url), job_id])
-            running_jobs[job_id] = proc
+            thread = Thread(target=run_scraper, args=(str(url), job_id), daemon=True)
+            thread.start()
+            running_jobs[job_id] = thread
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -208,8 +215,9 @@ def start_scrape(request: ScrapeRequest):
 @app.post("/stop-scrape")
 def stop_scrape():
     stopped = []
-    for job_id, proc in list(running_jobs.items()):
-        proc.terminate()
+    for job_id, thread in list(running_jobs.items()):
+        # Note: Threads can't be forcefully terminated like processes
+        # We can only mark them as stopped in the progress file
         progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
         if os.path.exists(progress_file):
             with open(progress_file, "r+", encoding="utf-8") as f:
