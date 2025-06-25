@@ -11,6 +11,8 @@ from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 from crawl4ai.content_filter_strategy import PruningContentFilter
 from utils import is_excluded, clean_text, log_progress
+import hashlib
+
 
 PROGRESS_FOLDER = "progress"
 MAX_CONCURRENT = 15
@@ -81,7 +83,7 @@ async def crawl_all(urls, max_concurrent, progress_file, start_url):
         ),
     )
 
-    results_by_domain = defaultdict(list)
+    results_by_domain = defaultdict(dict)
     total = len(urls)
     done = 0
     success = 0
@@ -102,14 +104,28 @@ async def crawl_all(urls, max_concurrent, progress_file, start_url):
                     if isinstance(task, Exception):
                         raise task
                     res = task
+
+                    domain = urlparse(url).netloc
+                    output_filepath = os.path.join(out_dir, f"{domain}.json")
+
+                    if os.path.exists(output_filepath):
+                        with open(output_filepath, "r", encoding="utf-8") as f:
+                            existing_data = json.load(f)
+                            if url in existing_data:
+                                if existing_data[url]["hash"] == hashlib.sha256(
+                                    res.markdown.encode()).hexdigest():
+                                    print(f"🔄 {url} al verwerkt, overslaan")
+                                    continue
+
                     if res.success and res.markdown.fit_markdown:
                         summary = clean_text(res.markdown.fit_markdown)
-                        domain = urlparse(url).netloc
+                        
                         results_by_domain[domain].append(
                             {
                                 "url": url,
                                 "titel": url.rstrip("/").split("/")[-1] or domain,
                                 "samenvatting": summary,
+                                "hash": hashlib.sha256(res.markdown.encode()).hexdigest(),
                             }
                         )
                         success += 1
@@ -143,6 +159,7 @@ async def crawl_all(urls, max_concurrent, progress_file, start_url):
 async def run_scrape(url: str, job_id: str):
     progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
     log_progress(progress_file, 0, "starting", url=url)
+
 
     async with AsyncWebCrawler(config=BrowserConfig(headless=True)) as crawler:
         try:
