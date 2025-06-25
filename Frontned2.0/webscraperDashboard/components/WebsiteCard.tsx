@@ -1,8 +1,5 @@
-<<<<<<< my-feature-branch
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-=======
->>>>>>> backend-upgrade
 export interface WebsiteCardProps {
   url: string;
   lastScraped?: string;
@@ -15,25 +12,6 @@ export interface WebsiteCardProps {
   failed?: number;
 }
 
-<<<<<<< my-feature-branch
-export interface Website {
-  url: string;
-  id: number;
-  // add more fields if you have them
-}
-
-export interface ActivityEntry {
-  url: string;
-  status: string;
-  timestamp?: string;
-  job_id: string;
-  // add other fields if needed
-}
-
-
-
-=======
->>>>>>> backend-upgrade
 export default function WebsiteCard({
   url,
   lastScraped,
@@ -45,8 +23,21 @@ export default function WebsiteCard({
   success = 0,
   failed = 0,
 }: WebsiteCardProps) {
-  const isWorking = ["discovering", "scraping", "done"].includes(status);
-  const displayStatus = status === "done" && done >= total ? "done" : status;
+  // Track if "done" info should be shown after mouse leaves
+  const [showDone, setShowDone] = useState(true);
+
+  // Reset showDone if we start a new scrape/discovering/idle
+  useEffect(() => {
+    if (status !== "done") setShowDone(true);
+  }, [status]);
+
+  // Show progress/info if:
+  // - discovering/scraping (always)
+  // - done AND showDone is true
+  const showProgress =
+    status === "discovering" ||
+    status === "scraping" ||
+    (status === "done" && showDone);
 
   function formatDateTime(dt?: string): string {
     if (!dt) return "Unknown";
@@ -58,30 +49,25 @@ export default function WebsiteCard({
     });
   }
 
-<<<<<<< my-feature-branch
-  
-
-=======
->>>>>>> backend-upgrade
   return (
-    <div className="website-card">
+    <div
+      className="website-card"
+      onMouseLeave={() => {
+        if (status === "done" && showDone) setShowDone(false);
+      }}
+    >
       <div className="website-details">
         <div className="website-icon">🌐</div>
         <div className="website-info">
           <p>{url}</p>
           <div>
-            <span className={`badge ${displayStatus}`}>
-              {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
+            <span className={`badge ${status}`}>
+              {status.charAt(0).toUpperCase() + status.slice(1)}
             </span>
-<<<<<<< my-feature-branch
             <span style={{ fontSize: "12px", color: "#283593", marginLeft: "8px" }}>
-=======
-            <span style={{ fontSize: "12px", color: "#9ca3af" }}>
->>>>>>> backend-upgrade
               Last scraped: {formatDateTime(lastScraped)}
             </span>
-
-            {isWorking && (
+            {showProgress && (
               <>
                 <div className="progress-info">
                   <small>

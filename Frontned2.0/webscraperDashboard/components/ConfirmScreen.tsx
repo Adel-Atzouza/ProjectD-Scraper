@@ -16,7 +16,7 @@ export default function ConfirmModal({ isOpen, onCancel, onConfirm }: ConfirmMod
         <h3>⚠️ Confirm Deletion</h3>
         <p>Are you sure you want to delete this website?</p>
         <div className="modal-buttons">
-          <button className="danger" onClick={onConfirm}>Yes, Delete</button>
+          <button className="confirm" onClick={onConfirm}>Yes, Delete</button>
           <button onClick={onCancel}>Cancel</button>
         </div>
       </div>
