@@ -10,6 +10,7 @@ type ActivityEntry = {
   success?: number;
   failed?: number;
   job_id: string;
+  timestamp?: string;
 };
 
 const API = "http://127.0.0.1:8000";
@@ -17,6 +18,16 @@ const API = "http://127.0.0.1:8000";
 export default function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  function formatDateTime(dt?: string): string {
+    if (!dt) return "Unknown";
+    const d = new Date(dt);
+    if (isNaN(d.getTime())) return "Unknown";
+    return d.toLocaleString(undefined, {
+      year: "numeric", month: "short", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit"
+    });
+  }
 
   const fetchActivity = async () => {
     try {
@@ -138,6 +149,9 @@ export default function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
                       <br />✅ Success: {e.success ?? 0} | ❌ Failed:{" "}
                       {e.failed ?? 0}
                     </small>
+                    <div style={{ fontSize: "12px", color: "#555", marginTop: "4px" }}>
+                      <span>Started: {formatDateTime(e.timestamp)}</span>
+                    </div>
                   </>
                 )}
                 <button
