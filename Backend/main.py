@@ -4,6 +4,7 @@ import uuid
 import subprocess
 from fastapi import FastAPI, HTTPException
 from starlette.responses import FileResponse, JSONResponse
+from starlette.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from pydantic import BaseModel, HttpUrl
@@ -13,8 +14,12 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(BASE_DIR, "websites.json")
 PROGRESS_FOLDER = "progress"
 SCRAPER_SCRIPT = "CrawlscraperA.py"
+SCRAPER_SCRIPT = "CrawlscraperA.py"
 
 os.makedirs(PROGRESS_FOLDER, exist_ok=True)
+
+running_jobs = {}
+
 
 running_jobs = {}
 
@@ -23,14 +28,33 @@ class Website(BaseModel):
     id: int
     url: HttpUrl
 
+    url: HttpUrl
+
 
 class WebsiteCreate(BaseModel):
+    url: HttpUrl
+
     url: HttpUrl
 
 
 class ScrapeRequest(BaseModel):
     urls: List[HttpUrl]
+    urls: List[HttpUrl]
 
+
+def load_db(path: str) -> List[dict]:
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+
+def save_db(path: str, data: List[dict]):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+db_websites = load_db(DB_FILE)
 
 def load_db(path: str) -> List[dict]:
     if os.path.exists(path):
@@ -60,10 +84,16 @@ app.add_middleware(
 @app.get("/health")
 def health():
     return {"status": "alive"}
+@app.get("/health")
+def health():
+    return {"status": "alive"}
 
 
 @app.get("/websites", response_model=List[Website])
 def get_websites():
+    # filters website in website.json zonder url
+    valid = [w for w in db_websites if w.get("url")]
+    return valid
     # filters website in website.json zonder url
     valid = [w for w in db_websites if w.get("url")]
     return valid
@@ -73,7 +103,9 @@ def get_websites():
 def add_website(website: WebsiteCreate):
     new_id = max([w["id"] for w in db_websites], default=0) + 1
     new_entry = {"id": new_id, "url": str(website.url)}
+    new_entry = {"id": new_id, "url": str(website.url)}
     db_websites.append(new_entry)
+    save_db(DB_FILE, db_websites)
     save_db(DB_FILE, db_websites)
     return new_entry
 
@@ -83,6 +115,7 @@ def delete_website(website_id: int):
     for w in db_websites:
         if w["id"] == website_id:
             db_websites.remove(w)
+            save_db(DB_FILE, db_websites)
             save_db(DB_FILE, db_websites)
             return {"detail": "Website removed", "id": website_id, "url": w["url"]}
     raise HTTPException(status_code=404, detail="Website not found")
@@ -188,6 +221,8 @@ def start_scrape(request: ScrapeRequest):
     for url in request.urls:
         if not any(w["url"].rstrip("/") == str(url).rstrip("/") for w in db_websites):
             raise HTTPException(status_code=400, detail=f"URL not in database: {url}")
+        if not any(w["url"].rstrip("/") == str(url).rstrip("/") for w in db_websites):
+            raise HTTPException(status_code=400, detail=f"URL not in database: {url}")
 
         job_id = str(uuid.uuid4())
         progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
@@ -201,6 +236,7 @@ def start_scrape(request: ScrapeRequest):
             raise HTTPException(status_code=500, detail=str(e))
 
         job_ids.append({"url": str(url), "job_id": job_id})
+        job_ids.append({"url": str(url), "job_id": job_id})
 
     return {"jobs": job_ids}
 
@@ -212,6 +248,7 @@ def stop_scrape():
         proc.terminate()
         progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
         if os.path.exists(progress_file):
+            with open(progress_file, "r+", encoding="utf-8") as f:
             with open(progress_file, "r+", encoding="utf-8") as f:
                 try:
                     data = json.load(f)
@@ -231,5 +268,7 @@ def scrape_progress(job_id: str):
     progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
     if not os.path.exists(progress_file):
         raise HTTPException(status_code=404, detail="Job not found")
+    with open(progress_file, "r", encoding="utf-8") as f:
+        return JSONResponse(content=json.load(f))
     with open(progress_file, "r", encoding="utf-8") as f:
         return JSONResponse(content=json.load(f))

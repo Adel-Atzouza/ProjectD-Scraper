@@ -24,6 +24,16 @@ export default function WebsiteCard({
   const isWorking = ["discovering", "scraping", "done"].includes(status);
   const displayStatus = status === "done" && done >= total ? "done" : status;
 
+  function formatDateTime(dt?: string): string {
+    if (!dt) return "Unknown";
+    const d = new Date(dt);
+    if (isNaN(d.getTime())) return "Unknown";
+    return d.toLocaleString(undefined, {
+      year: "numeric", month: "short", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit"
+    });
+  }
+
   return (
     <div className="website-card">
       <div className="website-details">
@@ -35,7 +45,7 @@ export default function WebsiteCard({
               {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
             </span>
             <span style={{ fontSize: "12px", color: "#9ca3af" }}>
-              Last scraped: {lastScraped ?? "Unknown"}
+              Last scraped: {formatDateTime(lastScraped)}
             </span>
 
             {isWorking && (
