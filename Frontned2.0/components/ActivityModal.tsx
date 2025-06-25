@@ -88,6 +88,13 @@ export default function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
     return 0;
   });
 
+  // Calculate status counts
+  const statusCounts = entries.reduce((acc, entry) => {
+    const status = entry.status.toLowerCase();
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
   function formatDateTime(dt?: string): string {
     if (!dt || dt.trim() === '') return "Unknown";
     const d = new Date(dt);
@@ -193,6 +200,44 @@ export default function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
               </select>
             </div>
           </div>
+
+          {/* Status Summary */}
+          {!error && entries.length > 0 && (
+            <div
+              style={{
+                padding: "12px 16px",
+                backgroundColor: "#f8fafc",
+                borderBottom: "1px solid #e2e8f0",
+                display: "flex",
+                gap: "20px",
+                flexWrap: "wrap",
+                fontSize: "14px",
+                fontWeight: "500"
+              }}
+            >
+              <span style={{ color: "#059669" }}>
+                Done: {statusCounts.done || 0}
+              </span>
+              <span style={{ color: "#dc2626" }}>
+                Stopped: {statusCounts.stopped || 0}
+              </span>
+              <span style={{ color: "#2563eb" }}>
+                Discovering: {statusCounts.discovering || 0}
+              </span>
+              <span style={{ color: "#7c3aed" }}>
+                Running: {statusCounts.running || 0}
+              </span>
+              <span style={{ color: "#ea580c" }}>
+                Failed: {statusCounts.failed || 0}
+              </span>
+              <span style={{ color: "#dc2626" }}>
+                Error: {statusCounts.error || 0}
+              </span>
+              <span style={{ color: "#6b7280", marginLeft: "auto" }}>
+                Total: {entries.length}
+              </span>
+            </div>
+          )}
 
           <div
             style={{
