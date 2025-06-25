@@ -94,18 +94,17 @@ def get_websites():
     # filters website in website.json zonder url
     valid = [w for w in db_websites if w.get("url")]
     return valid
-    # filters website in website.json zonder url
-    valid = [w for w in db_websites if w.get("url")]
-    return valid
 
 
 @app.post("/websites", response_model=Website)
 def add_website(website: WebsiteCreate):
+    for w in db_websites:
+        if str(website.url) == str(w["url"]):
+            raise HTTPException(status_code=400, detail="Website already exists")
+        continue
     new_id = max([w["id"] for w in db_websites], default=0) + 1
     new_entry = {"id": new_id, "url": str(website.url)}
-    new_entry = {"id": new_id, "url": str(website.url)}
     db_websites.append(new_entry)
-    save_db(DB_FILE, db_websites)
     save_db(DB_FILE, db_websites)
     return new_entry
 
@@ -116,7 +115,6 @@ def delete_website(website_id: int):
         if w["id"] == website_id:
             db_websites.remove(w)
             save_db(DB_FILE, db_websites)
-            save_db(DB_FILE, db_websites)
             return {"detail": "Website removed", "id": website_id, "url": w["url"]}
     raise HTTPException(status_code=404, detail="Website not found")
 
@@ -124,28 +122,46 @@ def delete_website(website_id: int):
 @app.get("/stats")
 def get_stats():
     websites = load_db(DB_FILE)
+    website_urls = set([w["url"].rstrip("/") for w in websites])
     total = len(websites)
 
-    completed = sum(
-        1
-        for fname in os.listdir(PROGRESS_FOLDER)
-        if fname.endswith(".json")
-        and json.load(open(os.path.join(PROGRESS_FOLDER, fname)))["status"] == "done"
-    )
-    active = sum(
-        1
-        for fname in os.listdir(PROGRESS_FOLDER)
-        if fname.endswith(".json")
-        and json.load(open(os.path.join(PROGRESS_FOLDER, fname)))["status"]
-        == "scraping"
-    )
-    success_rate = f"{(completed / total * 100):.0f}%" if total > 0 else "0%"
+    completed = 0
+    active = 0
+    relevant_jobs = 0
+    total_success = 0
+    total_failed = 0
+
+    for fname in os.listdir(PROGRESS_FOLDER):
+        if not fname.endswith(".json"):
+            continue
+        path = os.path.join(PROGRESS_FOLDER, fname)
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                url = data.get("url", "").rstrip("/")
+                if url in website_urls:
+                    relevant_jobs += 1
+                    if data.get("status") == "done":
+                        completed += 1
+                    if data.get("status") in ("done", "stopped", "scraping"):
+                        total_success += data.get("success", 0)
+                        total_failed += data.get("failed", 0)
+                    elif data.get("status") == "scraping":
+                        active += 1
+        except Exception:
+            continue
+
+    denom = total_success + total_failed
+    success_rate = f"{(total_success / denom * 100):.0f}%" if denom > 0 else "0%"
+
     return {
         "total": total,
         "active": active,
         "completed": completed,
         "success_rate": success_rate,
     }
+
+
 
 
 @app.get("/activity")
@@ -169,6 +185,7 @@ def get_activity():
                         "total": data.get("total", 0),
                         "success": data.get("success", 0),
                         "failed": data.get("failed", 0),
+                        "timestamp": data.get("timestamp", "Unknown time"),
                     }
                 )
         except Exception:
@@ -221,8 +238,6 @@ def start_scrape(request: ScrapeRequest):
     for url in request.urls:
         if not any(w["url"].rstrip("/") == str(url).rstrip("/") for w in db_websites):
             raise HTTPException(status_code=400, detail=f"URL not in database: {url}")
-        if not any(w["url"].rstrip("/") == str(url).rstrip("/") for w in db_websites):
-            raise HTTPException(status_code=400, detail=f"URL not in database: {url}")
 
         job_id = str(uuid.uuid4())
         progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
@@ -235,7 +250,6 @@ def start_scrape(request: ScrapeRequest):
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-        job_ids.append({"url": str(url), "job_id": job_id})
         job_ids.append({"url": str(url), "job_id": job_id})
 
     return {"jobs": job_ids}
@@ -267,7 +281,5 @@ def scrape_progress(job_id: str):
     progress_file = os.path.join(PROGRESS_FOLDER, f"{job_id}.json")
     if not os.path.exists(progress_file):
         raise HTTPException(status_code=404, detail="Job not found")
-    with open(progress_file, "r", encoding="utf-8") as f:
-        return JSONResponse(content=json.load(f))
     with open(progress_file, "r", encoding="utf-8") as f:
         return JSONResponse(content=json.load(f))

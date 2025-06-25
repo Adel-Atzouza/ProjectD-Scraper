@@ -352,7 +352,10 @@ export default function Dashboard() {
 
       <ActivityModal
         isOpen={activityOpen}
-        onClose={() => setActivityOpen(false)}
+        onClose={() => {
+          setActivityOpen(false);
+          loadData(); // <--- refresh stats & activity
+        }}
       />
     </>
   );
