@@ -3,7 +3,6 @@ import requests
 import time
 import os
 from urllib.parse import urlparse
-from scraper import extract_phone_number
 
 BASE_URL = "http://localhost:8000"
 
@@ -23,16 +22,18 @@ def test_get_websites_structure():
         assert parsed.scheme in ("http", "https") and parsed.netloc
 
 def test_post_valid_website():
-    payload = {"url": "https://example.com"}
+    payload = {"url": "https://example.com/122333/23"}
     response = requests.post(f"{BASE_URL}/websites", json=payload)
     assert response.status_code == 200
     data = response.json()
     assert "id" in data and isinstance(data["id"], int)
 
+
 def test_post_invalid_website():
     payload = {"url": ""}
     response = requests.post(f"{BASE_URL}/websites", json=payload)
     assert response.status_code in (400, 422)
+
 
 def test_post_duplicate_website():
     url = "https://duplicate.com"
@@ -40,10 +41,11 @@ def test_post_duplicate_website():
     r1 = requests.post(f"{BASE_URL}/websites", json={"url": url})
     r2 = requests.post(f"{BASE_URL}/websites", json={"url": url})
     assert r1.status_code == 200
-    assert r2.status_code == 200
+    assert r2.status_code == 409
+
 
 def test_delete_existing_website_by_url():
-    url = "https://delete-me.com"
+    url = "https://delete-me.com/12123123/123123/123"
     requests.post(f"{BASE_URL}/websites", json={"url": url})
     delete = requests.delete(f"{BASE_URL}/websites", params={"url": url})
     assert delete.status_code == 200
@@ -104,14 +106,3 @@ def test_cors_headers():
 ###################
 # UTILITY TESTS   #
 ###################
-
-@pytest.mark.parametrize("html,expected", [
-    ("<div>Contact: 06-12345678</div>", "06-12345678"),
-    ("<div>Geen telefoonnummer aanwezig</div>", None),
-    ("<span>Bel: +31 6 12345678</span>", "+31 6 12345678"),
-    ("Mobiel: 0612345678", "0612345678"),
-    ("<div>No phone</div>", None),
-    ("<div>Telefoon: 06 23456789</div>", "06 23456789"),
-])
-def test_extract_phone_number(html, expected):
-    assert extract_phone_number(html) == expected

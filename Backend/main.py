@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from typing import List, Union
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
 from fastapi.responses import FileResponse
 
 
@@ -19,13 +19,13 @@ os.makedirs(PROGRESS_FOLDER, exist_ok=True)
 
 class Website(BaseModel):
     id: int
-    url: str
+    url: HttpUrl
 
 class WebsiteCreate(BaseModel):
-    url: str
+    url: HttpUrl
 
 class ScrapeRequest(BaseModel):
-    urls: List[str]
+    urls: List[HttpUrl]
 
 try:
     with open("websites.json", "r", encoding="utf-8") as f:
@@ -58,21 +58,48 @@ def save_db():
         json.dump(db_websites, f, indent=2, ensure_ascii=False)
 
 
+@app.delete("/websites/{website_id}")
+def delete_website_by_id(website_id: int):
+    for w in db_websites:
+        if int(w["id"]) == website_id:
+            db_websites.remove(w)
+            save_db()
+            return {"detail": "Website removed", "id": website_id, "url": w["url"]}
+    raise HTTPException(status_code=404, detail="Website not found wdwdwdwdwd")
+
 
 @app.get("/websites", response_model=List[Website])
 def get_websites():
     return db_websites
 
+
 @app.get("/stats")
 def get_stats():
     total = len(db_websites)
-    # For demo: completed = files in progress folder not 'started'; active job count is 0 currently
-    completed = sum(1 for fname in os.listdir(PROGRESS_FOLDER)
-                    if json.load(open(os.path.join(PROGRESS_FOLDER, fname)))["status"] == "done")
-    active = sum(1 for fname in os.listdir(PROGRESS_FOLDER)
-                 if json.load(open(os.path.join(PROGRESS_FOLDER, fname)))["status"] == "started")
+    # Collect all URLs currently in the DB, normalized
+    db_urls = {str(w["url"]).rstrip("/").lower() for w in db_websites}
+
+    completed = 0
+    active = 0
+
+    for fname in os.listdir(PROGRESS_FOLDER):
+        try:
+            with open(os.path.join(PROGRESS_FOLDER, fname)) as f:
+                data = json.load(f)
+                # Make sure to only count if the URL is in the current DB
+                url = str(data.get("url", "")).rstrip("/").lower()
+                if url in db_urls:
+                    if data.get("status") == "done":
+                        completed += 1
+                    if data.get("status") == "started":
+                        active += 1
+        except Exception:
+            continue
+
     success_rate = f"{(completed / total * 100):.0f}%" if total > 0 else "0%"
-    return {"total":total, "active":active, "completed":completed, "success_rate":success_rate}
+
+    return {"total": total, "active": active, "completed": completed, "success_rate": success_rate}
+
 
 
 @app.get("/activity")
@@ -100,13 +127,24 @@ def get_activity():
 
     return {"entries": entries}
 
+
 @app.post("/websites", response_model=Website)
 def add_website(website: WebsiteCreate):
+    norm_new_url = str(website.url).rstrip("/").lower()
+    for w in db_websites:
+        norm_existing_url = str(w["url"]).rstrip("/").lower()
+        if norm_existing_url == norm_new_url:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Website already exists: {website.url}"
+            )
     new_id = max([w["id"] for w in db_websites], default=0) + 1
-    new_entry = {"id": new_id, "url": website.url}
+    new_entry = {"id": new_id, "url": str(website.url)}
     db_websites.append(new_entry)
     save_db()
     return new_entry
+
+
 
 @app.get("/output/{date}/{filename}")
 def get_output_file(date: str, filename: str):
@@ -115,35 +153,27 @@ def get_output_file(date: str, filename: str):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(full_path, media_type="application/json")
 
+
 @app.delete("/websites")
 def delete_website(url: str):
-    if url in db_websites:
-        db_websites.remove(url)
-        save_db()
-        return {"detail": "Website removed", "url": url}
-    else:
-        raise HTTPException(status_code=404, detail="Website not found")
-
-
-@app.delete("/websites/{website_id}")
-def delete_website(website_id: int):
+    norm_url = str(url).rstrip("/").lower()
     for w in db_websites:
-        if w["id"] == website_id:
+        if str(w["url"]).rstrip("/").lower() == norm_url:
             db_websites.remove(w)
             save_db()
-            return {"detail": "Website removed", "id": website_id, "url": w["url"]}
-
+            return {"detail": "Website removed", "url": url}
     raise HTTPException(status_code=404, detail="Website not found")
 
+
 def normalize_url(u: str) -> str:
-    return u.rstrip("/").lower()
+    return str(u).rstrip("/").lower()
 
 @app.post("/start-scrape")
 def start_scrape(request: ScrapeRequest):
     job_ids = []
 
     for url in request.urls:
-        if not any(w["url"].rstrip("/").lower() == url.rstrip("/").lower() for w in db_websites):
+        if not any(str(w["url"]).rstrip("/").lower() == url.rstrip("/").lower() for w in db_websites):
             available = [w["url"] for w in db_websites]
             raise HTTPException(
                 status_code=400,
