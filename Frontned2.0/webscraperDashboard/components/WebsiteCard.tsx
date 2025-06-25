@@ -1,5 +1,8 @@
+<<<<<<< my-feature-branch
 import { useState } from "react";
 
+=======
+>>>>>>> backend-upgrade
 export interface WebsiteCardProps {
   url: string;
   lastScraped?: string;
@@ -12,6 +15,7 @@ export interface WebsiteCardProps {
   failed?: number;
 }
 
+<<<<<<< my-feature-branch
 export interface Website {
   url: string;
   id: number;
@@ -28,6 +32,8 @@ export interface ActivityEntry {
 
 
 
+=======
+>>>>>>> backend-upgrade
 export default function WebsiteCard({
   url,
   lastScraped,
@@ -52,8 +58,11 @@ export default function WebsiteCard({
     });
   }
 
+<<<<<<< my-feature-branch
   
 
+=======
+>>>>>>> backend-upgrade
   return (
     <div className="website-card">
       <div className="website-details">
@@ -64,7 +73,11 @@ export default function WebsiteCard({
             <span className={`badge ${displayStatus}`}>
               {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
             </span>
+<<<<<<< my-feature-branch
             <span style={{ fontSize: "12px", color: "#283593", marginLeft: "8px" }}>
+=======
+            <span style={{ fontSize: "12px", color: "#9ca3af" }}>
+>>>>>>> backend-upgrade
               Last scraped: {formatDateTime(lastScraped)}
             </span>
 

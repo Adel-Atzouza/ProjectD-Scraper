@@ -1,18 +1,14 @@
 import scrapy
 import re
 
+
 class SociaalTeamSpider(scrapy.Spider):
-    name = 'sociaalteamgouda_spider'
-    allowed_domains = ['sociaalteamgouda.nl']
-    start_urls = ['https://sociaalteamgouda.nl/ik-zoek-hulp/']
+    name = "sociaalteamgouda_spider"
+    allowed_domains = ["sociaalteamgouda.nl"]
+    start_urls = ["https://sociaalteamgouda.nl/ik-zoek-hulp/"]
 
     custom_settings = {
-        'FEEDS': {
-            'ik_zoek_hulp.csv': {
-                'format': 'csv',
-                'overwrite': True
-            }
-        }
+        "FEEDS": {"ik_zoek_hulp.csv": {"format": "csv", "overwrite": True}}
     }
 
     def parse(self, response):
@@ -29,10 +25,12 @@ class SociaalTeamSpider(scrapy.Spider):
         onderwerp_links = [url for url in onderwerp_links if "/onderwerp/" in url]
 
         for link in onderwerp_links:
-            yield response.follow(link, callback=self.parse_onderwerp, meta={'thema': thema})
+            yield response.follow(
+                link, callback=self.parse_onderwerp, meta={"thema": thema}
+            )
 
     def parse_onderwerp(self, response):
-        thema = response.meta['thema']
+        thema = response.meta["thema"]
         onderwerp = response.css("h1.entry-title::text").get(default="").strip()
 
         # Alle tekstparagrafen ophalen
@@ -41,7 +39,10 @@ class SociaalTeamSpider(scrapy.Spider):
 
         # Ongewenste herhaling verwijderen
         content_text = re.sub(
-            r"(Laat je telefoonnummer.*?088 900 4321\.)", "", content_text, flags=re.IGNORECASE
+            r"(Laat je telefoonnummer.*?088 900 4321\.)",
+            "",
+            content_text,
+            flags=re.IGNORECASE,
         ).strip()
 
         # Externe links ophalen
@@ -53,5 +54,5 @@ class SociaalTeamSpider(scrapy.Spider):
             "Onderwerp": onderwerp,
             "Tekst": content_text,
             "Externe links": ", ".join(set(externe_links)),
-            "URL": response.url
+            "URL": response.url,
         }

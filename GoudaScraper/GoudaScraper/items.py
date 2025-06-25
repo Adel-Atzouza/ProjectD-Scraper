@@ -26,6 +26,7 @@ class KwadraadItem(scrapy.Item):
     contact_phone = scrapy.Field()
     contact_email = scrapy.Field()
 
+
 class AlgemeneInfoItem(scrapy.Item):
     section = scrapy.Field()
     content = scrapy.Field()
