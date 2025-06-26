@@ -20,7 +20,7 @@ ProjectD-Scraper/
 ├── Project_D_Scraper/
 │   ├── Backend/               # FastAPI backend
 │   │   ├── main.py           # API endpoints
-│   │   ├── CrawlscraperA.py  # Core scraping engine
+│   │   ├── Crawlscraper.py  # Core scraping engine
 │   │   ├── utils.py          # Utility functions
 │   │   ├── progress/         # Job progress tracking
 │   │   └── backend_tests/    # Backend tests

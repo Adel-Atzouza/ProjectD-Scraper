@@ -3,3 +3,4 @@ uvicorn
 pydantic
 starlette
 crawl4ai
+pytest
