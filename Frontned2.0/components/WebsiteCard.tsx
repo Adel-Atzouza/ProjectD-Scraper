@@ -67,16 +67,20 @@ export default function WebsiteCard({
             <span style={{ fontSize: "12px", color: "#283593", marginLeft: "8px" }}>
               Last scraped: {formatDateTime(lastScraped)}
             </span>
-            {showProgress && (
+            { (
               <>
-                <div className="progress-info">
-                  <small>
-                    {done} / {total} – ✔️{success} / ❌{failed}
-                  </small>
-                </div>
+                {status === "done" && (<div className="progress-info">
+                  
+                    <small>
+                      {done} / {total} – {(done == 0 && total == 0) ? "Site is unreachable" : (success == 0 && failed == 0) ? "Website hasn't changed since last scrape." : <span>✔️{success} / ❌{failed}</span>}
+                    </small>
+                  
+                  
+                </div>)}
+                { status !== "done" && showProgress && (
                 <div className="progress-bar">
                   <div className="progress-fill" style={{ width: `${progress}%` }} />
-                </div>
+                </div>)}
               </>
             )}
           </div>
