@@ -3,7 +3,7 @@ import requests
 import time
 import os
 from urllib.parse import urlparse
-from scraper import extract_phone_number
+from Project_D_Scraper.Backend.backend_tests.helper import extract_phone_number
 
 BASE_URL = "http://localhost:8000"
 
