@@ -72,7 +72,7 @@ export default function WebsiteCard({
                 {status === "done" && (<div className="progress-info">
                   
                     <small>
-                      {done} / {total} – {success == 0 && failed == 0 ? "Website hasn't changed since last scrape." : <span>✔️{success} / ❌{failed}</span>}
+                      {done} / {total} – {(done == 0 && total == 0) ? "Site is unreachable" : (success == 0 && failed == 0) ? "Website hasn't changed since last scrape." : <span>✔️{success} / ❌{failed}</span>}
                     </small>
                   
                   
